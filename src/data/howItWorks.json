@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Upload receipt",
+    "body": "A photo or PDF. No forms to fill.",
+    "icon": "upload"
+  },
+  {
+    "title": "Ask in your language",
+    "body": "Typed or spoken \u2014 Hindi, Marathi, Telugu, Kannada, Hinglish.",
+    "icon": "message"
+  },
+  {
+    "title": "Get verdict + cited clause",
+    "body": "Approved or flagged, with the exact clause and why.",
+    "icon": "check"
+  },
+  {
+    "title": "Reimbursement triggered",
+    "body": "Approved claims move to payout through RazorpayX.",
+    "icon": "rupee"
+  }
+]

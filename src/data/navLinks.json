@@ -1,0 +1,10 @@
+[
+  {
+    "to": "/about",
+    "label": "About"
+  },
+  {
+    "to": "/login",
+    "label": "Login"
+  }
+]
