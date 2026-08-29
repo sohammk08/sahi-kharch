@@ -1,12 +1,10 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 
-function Login() {
-  const { login } = useAuth();
+function Register() {
+  const { register } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -14,16 +12,20 @@ function Login() {
     e.preventDefault();
     setError("");
     const form = new FormData(e.target);
+    const name = form.get("name").trim();
     const email = form.get("email").trim();
     const password = form.get("password");
-    if (!email || !password) return setError("Email and password are required");
+
+    if (!name) return setError("Name is required");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Enter a valid email");
+    if (password.length < 8) return setError("Password must be at least 8 characters");
 
     setLoading(true);
     try {
-      await login(email, password);
-      navigate(from, { replace: true });
-    } catch {
-      setError("Invalid email or password");
+      await register(name, email, password);
+      navigate("/");
+    } catch (err) {
+      setError(err.code === "auth/email-already-in-use" ? "Email already registered" : err.message);
     } finally {
       setLoading(false);
     }
@@ -33,13 +35,19 @@ function Login() {
     <section className="bg-[#dceeb1] text-black">
       <div className="mx-auto max-w-6xl px-8 py-24 md:px-12 md:py-32">
         <div className="mx-auto max-w-md rounded-3xl border border-[#e6e6e6] bg-white p-12">
-          <h1 className="eyebrow">Sign in</h1>
-          <h2 className="mt-4 headline">Welcome back</h2>
-          <p className="mt-3 body">
-            Sign in to review claims, check verdicts, and track reimbursements.
-          </p>
+          <h1 className="eyebrow">Create account</h1>
+          <h2 className="mt-4 headline">Join Sahi Kharch</h2>
+          <p className="mt-3 body">Register to upload policies and test receipt extraction.</p>
 
           <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-6">
+            <label className="flex flex-col gap-2">
+              <span className="body-sm font-[480]">Name</span>
+              <input
+                name="name"
+                placeholder="Your name"
+                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body placeholder:text-black/40"
+              />
+            </label>
             <label className="flex flex-col gap-2">
               <span className="body-sm font-[480]">Email</span>
               <input
@@ -49,7 +57,6 @@ function Login() {
                 className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body placeholder:text-black/40"
               />
             </label>
-
             <label className="flex flex-col gap-2">
               <span className="body-sm font-[480]">Password</span>
               <input
@@ -67,14 +74,14 @@ function Login() {
               disabled={loading}
               className="mt-2 rounded-[50px] bg-black px-6 py-3 text-[20px] font-[480] text-white disabled:opacity-50"
             >
-              {loading ? "Signing in…" : "Log in"}
+              {loading ? "Creating…" : "Register"}
             </button>
           </form>
 
           <p className="mt-8 text-center body-sm">
-            Don&apos;t have an account?{" "}
-            <Link to="/register" className="link underline">
-              Register
+            Already have an account?{" "}
+            <Link to="/login" className="link underline">
+              Log in
             </Link>
           </p>
         </div>
@@ -83,4 +90,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;

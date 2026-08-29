@@ -1,10 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import links from "../data/navLinks.json";
 import { FaBars, FaXmark } from "react-icons/fa6";
+import { useAuth } from "../context/useAuth.js";
 
 function Nav() {
   const [open, setOpen] = useState(false);
+  const { user, profile, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
   return (
     <header className="bg-white text-black">
@@ -23,27 +31,48 @@ function Nav() {
                 {l.label}
               </Link>
             ))}
+            {user && (
+              <Link
+                to="/admin/policy-upload"
+                className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
+              >
+                Console
+              </Link>
+            )}
           </nav>
         </div>
 
         <div className="flex items-center gap-4">
-          <a
-            href="mailto:demo@sahikharch.in"
-            className="hidden rounded-[50px] bg-black px-5 py-2 text-[15px] font-medium text-white lg:block"
-          >
-            Request a demo
-          </a>
+          {user ? (
+            <div className="hidden items-center gap-4 lg:flex">
+              <span className="body-sm">Hey, {profile?.name ?? "there"}</span>
+              <button
+                onClick={handleLogout}
+                className="rounded-[50px] bg-black px-5 py-2 text-[15px] font-medium text-white"
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <div className="hidden items-center gap-4 lg:flex">
+              <Link to="/login" className="body-sm px-3 py-2 hover:bg-[#f7f7f5] rounded-full">
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-[50px] bg-black px-5 py-2 text-[15px] font-medium text-white"
+              >
+                Register
+              </Link>
+            </div>
+          )}
           <button
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
             className="flex size-10 items-center justify-center rounded-full bg-[#f7f7f5] text-black lg:hidden"
           >
-            {open ? (
-              <FaXmark className="size-5" />
-            ) : (
-              <FaBars className="size-5" />
-            )}
+            {open ? <FaXmark className="size-5" /> : <FaBars className="size-5" />}
           </button>
         </div>
       </div>
@@ -73,15 +102,41 @@ function Nav() {
                 {l.label}
               </Link>
             ))}
+            {user && (
+              <Link to="/admin/policy-upload" onClick={() => setOpen(false)} className="display-lg">
+                Console
+              </Link>
+            )}
           </div>
-          <div className="mt-auto">
-            <a
-              href="mailto:demo@sahikharch.in"
-              onClick={() => setOpen(false)}
-              className="block rounded-[50px] bg-black px-6 py-3 text-center text-[20px] font-medium text-white"
-            >
-              Request a demo
-            </a>
+          <div className="mt-auto flex flex-col gap-3">
+            {user ? (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  handleLogout();
+                }}
+                className="block rounded-[50px] bg-black px-6 py-3 text-center text-[20px] font-medium text-white"
+              >
+                Log out
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setOpen(false)}
+                  className="block rounded-[50px] border border-[#e6e6e6] px-6 py-3 text-center text-[20px] font-medium"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setOpen(false)}
+                  className="block rounded-[50px] bg-black px-6 py-3 text-center text-[20px] font-medium text-white"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       )}
