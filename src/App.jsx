@@ -4,7 +4,6 @@ import Nav from "./components/Nav";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import Footer from "./components/Footer";
-import AdminNav from "./components/AdminNav";
 import { Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import ReceiptTester from "./pages/dev/ReceiptTester";
@@ -63,7 +62,7 @@ function App() {
             path="/admin/policy-upload"
             element={
               <ProtectedRoute>
-                <AdminNav />
+                <Nav />
                 <PolicyUpload />
               </ProtectedRoute>
             }
@@ -72,7 +71,7 @@ function App() {
             path="/admin/policy-library"
             element={
               <ProtectedRoute>
-                <AdminNav />
+                <Nav />
                 <PolicyLibrary />
               </ProtectedRoute>
             }
@@ -81,7 +80,7 @@ function App() {
             path="/dev/receipt-tester"
             element={
               <ProtectedRoute>
-                <AdminNav />
+                <Nav />
                 <ReceiptTester />
               </ProtectedRoute>
             }
