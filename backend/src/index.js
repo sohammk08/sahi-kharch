@@ -2,8 +2,10 @@ import "dotenv/config";
 import cors from "cors";
 import multer from "multer";
 import express from "express";
-import receipts from "./routes/receipts.js";
+import embed from "./routes/embed.js";
+import verdict from "./routes/verdict.js";
 import policies from "./routes/policies.js";
+import receipts from "./routes/receipts.js";
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.use(express.json());
 // and hand it to the corresponding parse handler:
 app.post("/api/receipts/parse", upload.single("file"), receipts);
 app.post("/api/policies/parse", upload.single("file"), policies);
+app.post("/api/embed", embed);
+app.post("/api/verdict", verdict);
 
 // Health check
 app.get("/api/health", (_req, res) => res.json({ ok: true }));

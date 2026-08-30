@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaBars, FaXmark } from "react-icons/fa6";
 import { useAuth } from "../context/useAuth.js";
+import { FaBars, FaXmark } from "react-icons/fa6";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const navLinks = [{ to: "/about", label: "About" }];
 const adminLinks = [
   { to: "/admin/policy-upload", label: "Policy Upload" },
   { to: "/admin/policy-library", label: "Policy Library" },
   { to: "/dev/receipt-tester", label: "Receipt Tester" },
+  { to: "/dev/claim-console", label: "Claim Console" },
+  { to: "/dev/audit-log", label: "Audit Log" },
 ];
 
 function Nav() {
@@ -67,7 +69,10 @@ function Nav() {
             </div>
           ) : (
             <div className="hidden items-center gap-4 lg:flex">
-              <Link to="/login" className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]">
+              <Link
+                to="/login"
+                className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
+              >
                 Login
               </Link>
               <Link
@@ -84,7 +89,11 @@ function Nav() {
             onClick={() => setOpen((v) => !v)}
             className="flex size-10 items-center justify-center rounded-full bg-[#f7f7f5] text-black lg:hidden"
           >
-            {open ? <FaXmark className="size-5" /> : <FaBars className="size-5" />}
+            {open ? (
+              <FaXmark className="size-5" />
+            ) : (
+              <FaBars className="size-5" />
+            )}
           </button>
         </div>
       </div>

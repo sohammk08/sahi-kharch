@@ -4,8 +4,10 @@ import Nav from "./components/Nav";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import Footer from "./components/Footer";
+import AuditLog from "./pages/dev/AuditLog";
 import { Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
+import ClaimConsole from "./pages/dev/ClaimConsole";
 import ReceiptTester from "./pages/dev/ReceiptTester";
 import PolicyUpload from "./pages/admin/PolicyUpload";
 import PolicyLibrary from "./pages/admin/PolicyLibrary";
@@ -82,6 +84,24 @@ function App() {
               <ProtectedRoute>
                 <Nav />
                 <ReceiptTester />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dev/claim-console"
+            element={
+              <ProtectedRoute>
+                <Nav />
+                <ClaimConsole />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dev/audit-log"
+            element={
+              <ProtectedRoute>
+                <Nav />
+                <AuditLog />
               </ProtectedRoute>
             }
           />

@@ -12,15 +12,41 @@ export function chunkClauses(text) {
   const clauses = [];
   let current = null;
 
+  // Validates if a string looks like a section heading (starts with
+  // uppercase, short length, no trailing dots or colons).
+  const isHeading = (s) =>
+    /^[A-Z]/.test(s) &&
+    !s.includes(":") &&
+    !/\.\s*$/.test(s) &&
+    s.split(/\s+/).length <= 8;
+
   // Split by pages (track which page we're on)
   text.split("\f").forEach((pageText, pageIndex) => {
-    for (const line of pageText.split("\n")) {
-      const m = line.match(/^\s*(\d+(?:\.\d+)*)\s+(.+)$/);
-      if (m) {
+    const lines = pageText.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Try to match "Number + Heading" on a single line
+      let m = line.match(/^\s*(\d+(?:\.\d+)*)\.?\s*(.+)$/);
+      let heading = m?.[2]?.trim();
+
+      // Handle edge case: Number is on one line, Heading is on the next
+      if (!m || !isHeading(heading)) {
+        const bm = line.match(/^\s*(\d+(?:\.\d+)*)\.?\s*$/);
+        const next = lines[i + 1]?.trim() ?? "";
+        if (bm && isHeading(next)) {
+          m = [null, bm[1], next];
+          heading = next;
+          i++;
+        }
+      }
+
+      // Start a new clause if a heading is matched; otherwise, accumulate text
+      if (m && isHeading(heading)) {
         if (current) clauses.push(current);
         current = {
           clauseId: m[1],
-          heading: m[2].trim(),
+          heading,
           pageNumber: pageIndex + 1,
           text: [],
         };
@@ -29,6 +55,7 @@ export function chunkClauses(text) {
       }
     }
   });
+
   if (current) clauses.push(current);
 
   return clauses

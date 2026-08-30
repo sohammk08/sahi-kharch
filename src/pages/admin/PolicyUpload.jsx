@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { db } from "../../firebase.js";
 import { useAuth } from "../../context/useAuth.js";
+import { embedClauses } from "../../lib/pipeline.js";
 import { TbUpload, TbCheck, TbX } from "react-icons/tb";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -20,6 +21,7 @@ function PolicyUpload() {
   const [status, setStatus] = useState(null); // "processing" | "parsed" | "failed"
   const [clauses, setClauses] = useState([]);
   const [error, setError] = useState("");
+  const [embedProgress, setEmbedProgress] = useState(null); // 0–100
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,6 +31,7 @@ function PolicyUpload() {
     setStatus("processing");
     setError("");
     setClauses([]);
+    setEmbedProgress(null);
 
     // Build a multipart upload so the backend can receive the file + metadata together
     const form = new FormData();
@@ -75,6 +78,15 @@ function PolicyUpload() {
       });
       await batch.commit();
 
+      // 4. Embed clauses for semantic search. Non-critical; fallback to page-order on failure
+      try {
+        await embedClauses(policyRef.id, (done, total) =>
+          setEmbedProgress(Math.round((done / total) * 100)),
+        );
+      } catch {
+        setError("Uploaded, but clause embedding for search failed.");
+      }
+      setEmbedProgress(100);
       setStatus("parsed");
     } catch (err) {
       setStatus("failed");
@@ -136,6 +148,21 @@ function PolicyUpload() {
             </button>
           </div>
         </form>
+
+        {embedProgress !== null && embedProgress < 100 && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between body-sm text-black/60">
+              <span>Embedding clauses for search…</span>
+              <span>{embedProgress}%</span>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-black/10">
+              <div
+                className="h-full bg-black transition-[width] duration-300"
+                style={{ width: `${embedProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {status === "parsed" && (
           <div className="mt-8 flex items-center gap-2 text-green-700">
