@@ -2,6 +2,7 @@ import { useState } from "react";
 import { db } from "../../firebase.js";
 import { TbUpload } from "react-icons/tb";
 import { useAuth } from "../../context/useAuth.js";
+import { friendlyError } from "../../lib/errors.js";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -78,7 +79,7 @@ function ReceiptTester() {
         status: "parsed",
       });
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(err));
     } finally {
       setProcessing(false);
     }

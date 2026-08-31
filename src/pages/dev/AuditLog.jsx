@@ -40,7 +40,7 @@ function AuditLog() {
       .finally(() => setLoading(false));
   }, []);
 
-  Open a bundle when a row's arrow is clicked
+  // Open a bundle when a row's arrow is clicked
   const openBundle = async (entry) => {
     setSelected(entry);
     setBundle(null);

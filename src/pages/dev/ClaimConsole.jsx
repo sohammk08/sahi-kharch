@@ -1,6 +1,7 @@
 import { db } from "../../firebase.js";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/useAuth.js";
+import { friendlyError } from "../../lib/errors.js";
 import { collection, getDocs } from "firebase/firestore";
 import { createClaimAndRunVerdict } from "../../lib/pipeline.js";
 
@@ -116,7 +117,7 @@ function ClaimConsole() {
       });
       setResult(res);
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(err));
     } finally {
       setRunning(false);
       setStep("");

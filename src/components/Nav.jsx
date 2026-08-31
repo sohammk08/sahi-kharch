@@ -10,6 +10,7 @@ const adminLinks = [
   { to: "/dev/receipt-tester", label: "Receipt Tester" },
   { to: "/dev/claim-console", label: "Claim Console" },
   { to: "/dev/audit-log", label: "Audit Log" },
+  { to: "/dev/consistency-check", label: "Consistency Check" },
 ];
 
 function Nav() {
@@ -44,12 +45,20 @@ function Nav() {
               </Link>
             ))}
             {user && !isAdmin && (
-              <Link
-                to="/admin/policy-upload"
-                className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
-              >
-                Console
-              </Link>
+              <>
+                <Link
+                  to="/ask"
+                  className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
+                >
+                  Ask
+                </Link>
+                <Link
+                  to="/admin/policy-upload"
+                  className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
+                >
+                  Console
+                </Link>
+              </>
             )}
           </nav>
         </div>
@@ -124,13 +133,22 @@ function Nav() {
               </Link>
             ))}
             {user && !isAdmin && (
-              <Link
-                to="/admin/policy-upload"
-                onClick={() => setOpen(false)}
-                className="display-lg"
-              >
-                Console
-              </Link>
+              <>
+                <Link
+                  to="/ask"
+                  onClick={() => setOpen(false)}
+                  className="display-lg"
+                >
+                  Ask
+                </Link>
+                <Link
+                  to="/admin/policy-upload"
+                  onClick={() => setOpen(false)}
+                  className="display-lg"
+                >
+                  Console
+                </Link>
+              </>
             )}
           </div>
           <div className="mt-auto flex flex-col gap-3">

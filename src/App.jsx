@@ -1,3 +1,4 @@
+import Ask from "./pages/Ask";
 import Login from "./pages/Login";
 import About from "./pages/About";
 import Nav from "./components/Nav";
@@ -13,6 +14,7 @@ import PolicyUpload from "./pages/admin/PolicyUpload";
 import PolicyLibrary from "./pages/admin/PolicyLibrary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import ConsistencyCheck from "./pages/dev/ConsistencyCheck";
 
 function App() {
   return (
@@ -102,6 +104,28 @@ function App() {
               <ProtectedRoute>
                 <Nav />
                 <AuditLog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ask"
+            element={
+              <ProtectedRoute>
+                <div className="flex h-screen flex-col overflow-hidden">
+                  <div className="shrink-0">
+                    <Nav />
+                  </div>
+                  <Ask />
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dev/consistency-check"
+            element={
+              <ProtectedRoute>
+                <Nav />
+                <ConsistencyCheck />
               </ProtectedRoute>
             }
           />

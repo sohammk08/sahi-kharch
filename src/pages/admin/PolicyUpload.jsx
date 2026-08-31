@@ -9,6 +9,7 @@ import { useState } from "react";
 import { db } from "../../firebase.js";
 import { useAuth } from "../../context/useAuth.js";
 import { embedClauses } from "../../lib/pipeline.js";
+import { friendlyError } from "../../lib/errors.js";
 import { TbUpload, TbCheck, TbX } from "react-icons/tb";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -90,7 +91,7 @@ function PolicyUpload() {
       setStatus("parsed");
     } catch (err) {
       setStatus("failed");
-      setError(err.message);
+      setError(friendlyError(err));
     }
   };
 
