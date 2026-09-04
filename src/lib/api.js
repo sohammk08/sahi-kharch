@@ -1,4 +1,5 @@
 import { db } from "../firebase.js";
+import { getAuth } from "firebase/auth";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 export const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -42,6 +43,36 @@ export async function apiCall(path, { method = "GET", body } = {}) {
     throw new Error(parsed.error || `Request failed: ${res.status}`);
   }
   return res.json();
+}
+
+// POST to the backend with the current user's Firebase ID token as a Bearer
+// token. The backend verifies it to identify the acting admin.
+async function authedPost(path, body) {
+  const idToken = await getAuth().currentUser?.getIdToken();
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const parsed = await res.json().catch(() => ({}));
+    throw new Error(parsed.error || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+// Trigger a RazorpayX payout for an approved claim. The backend verifies the
+// admin ID token, so send it along.
+export async function disburseClaim(claimId) {
+  return authedPost("/api/payout", { claimId });
+}
+
+// Mock-only: advance a queued payout to "processed" to simulate the webhook.
+export async function advancePayout(claimId) {
+  return authedPost("/api/payout/advance", { claimId });
 }
 
 // Sarvam-Translate: text, target language code (en-IN / hi-IN / mr-IN / etc.)

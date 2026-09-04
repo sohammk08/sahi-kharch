@@ -14,10 +14,10 @@ function TechStrip() {
           </div>
           <div>
             <span className="text-[20px] font-[480] tracking-[-0.1px]">
-              RazorpayX Payouts
+              RazorpayX Payouts (mock)
             </span>
             <p className="mt-1 text-[16px] font-[330] leading-[1.45] tracking-[-0.14px] text-white/70">
-              Test-mode reimbursement that closes the loop.
+              Simulated reimbursement that closes the loop.
             </p>
           </div>
         </div>

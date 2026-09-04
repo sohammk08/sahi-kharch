@@ -15,6 +15,7 @@ import { friendlyError } from "../../lib/errors.js";
 import RiskBars from "../../components/RiskBars.jsx";
 import { overrideClaim } from "../../lib/pipeline.js";
 import { useState, useEffect, useCallback } from "react";
+import { disburseClaim, advancePayout } from "../../lib/api.js";
 
 const FIELD_LABELS = {
   vendor: "Vendor",
@@ -43,6 +44,8 @@ function ClaimDetail() {
   const [history, setHistory] = useState([]);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [disbursing, setDisbursing] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
 
   const loadClaim = useCallback(async () => {
     try {
@@ -101,6 +104,34 @@ function ClaimDetail() {
       setError(friendlyError(err));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDisburse = async () => {
+    if (disbursing) return;
+    setDisbursing(true);
+    setError("");
+    try {
+      await disburseClaim(id);
+      await loadClaim();
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setDisbursing(false);
+    }
+  };
+
+  const handleAdvance = async () => {
+    if (advancing) return;
+    setAdvancing(true);
+    setError("");
+    try {
+      await advancePayout(id);
+      await loadClaim();
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setAdvancing(false);
     }
   };
 
@@ -252,6 +283,37 @@ function ClaimDetail() {
                     ))}
                   </div>
                 </>
+              )}
+
+              {claim?.reviewStatus === "approved" && (
+                <div className="mt-5 border-t border-[#f1f1f1] pt-5">
+                  {claim?.payoutStatus ? (
+                    <>
+                      <p className="body-sm capitalize text-black/70">
+                        Payout {claim.payoutStatus.payoutId} ·{" "}
+                        {claim.payoutStatus.state}
+                      </p>
+                      {import.meta.env.VITE_RAZORPAY_MOCK === "1" &&
+                        claim.payoutStatus.state === "queued" && (
+                          <button
+                            onClick={handleAdvance}
+                            disabled={advancing}
+                            className="mt-3 rounded-full border border-black px-5 py-2.5 body-sm font-[540] text-black disabled:opacity-50"
+                          >
+                            {advancing ? "Simulating…" : "Simulate processing"}
+                          </button>
+                        )}
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleDisburse}
+                      disabled={disbursing}
+                      className="rounded-full bg-black px-5 py-2.5 body-sm font-[540] text-white disabled:opacity-50"
+                    >
+                      {disbursing ? "Dispatching…" : "Disburse"}
+                    </button>
+                  )}
+                </div>
               )}
             </section>
 

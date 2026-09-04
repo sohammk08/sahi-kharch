@@ -6,7 +6,7 @@ function CTA() {
           See Sahi Kharch close the loop
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-[18px] font-[320] leading-[1.45] tracking-[-0.26px]">
-          From a receipt photo to a cited verdict to a live payout — in your own
+          From a receipt photo to a cited verdict to a simulated payout — in your own
           language.
         </p>
         <div className="mt-10">

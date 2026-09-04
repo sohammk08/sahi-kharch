@@ -45,6 +45,9 @@ export async function runVerdict({ system, user }) {
       }
     }
   }
+  if (typeof content !== "string") {
+    throw new Error("LLM returned no content after retries");
+  }
   console.log(`verdict: ${MODEL} in ${Date.now() - start}ms`);
   return content;
 }

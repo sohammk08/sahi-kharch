@@ -5,10 +5,13 @@ import express from "express";
 import stt from "./routes/stt.js";
 import tts from "./routes/tts.js";
 import embed from "./routes/embed.js";
+import payout from "./routes/payout.js";
+import webhook from "./routes/webhook.js";
 import verdict from "./routes/verdict.js";
 import policies from "./routes/policies.js";
 import receipts from "./routes/receipts.js";
 import translate from "./routes/translate.js";
+import payoutAdvance from "./routes/payoutAdvance.js";
 
 const app = express();
 
@@ -19,6 +22,15 @@ const upload = multer({
 });
 
 app.use(cors());
+
+// RazorpayX signs the raw body, so the webhook must read it as a Buffer before
+// the global express.json() below parses everything into objects.
+app.post(
+  "/api/webhook/razorpayx",
+  express.raw({ type: "application/json" }),
+  webhook,
+);
+
 app.use(express.json());
 
 // When the browser POSTs a file to these URLs, grab the uploaded file (as "file")
@@ -30,6 +42,8 @@ app.post("/api/verdict", verdict);
 app.post("/api/translate", translate);
 app.post("/api/tts", tts);
 app.post("/api/stt", stt);
+app.post("/api/payout", payout);
+app.post("/api/payout/advance", payoutAdvance);
 
 // Health check
 app.get("/api/health", (_req, res) => res.json({ ok: true }));

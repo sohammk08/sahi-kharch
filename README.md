@@ -37,8 +37,9 @@ wrong at scale:
   via Sarvam AI, including code-mixed queries.
 - A finance/admin exception queue for anything the system cannot confidently
   resolve.
-- A light RazorpayX Payouts integration (test mode) that disburses an approved
-  reimbursement, demonstrating a closed loop from receipt upload to money sent.
+- A light RazorpayX Payouts integration (mock mode by default) that simulates
+  disbursing an approved reimbursement, demonstrating a closed loop from receipt
+  upload to processed payout — no real money moves.
 
 ## High-Level Architecture
 
@@ -144,7 +145,7 @@ written to an append-only log: a permanent, inspectable record of why the
 decision was made. A finance/admin dashboard surfaces only the claims needing
 attention, each with its evidence bundle pre-assembled.
 
-### Reimbursement Layer (RazorpayX Payouts, Test Mode)
+### Reimbursement Layer (RazorpayX Payouts, Mock Mode)
 
 See Section 7 for the full walkthrough.
 
@@ -164,11 +165,15 @@ natively.
 - **Document/OCR assist (Sarvam Parse):** a second option for receipts and
   policy documents in a regional language.
 
-## The RazorpayX Integration (Light, Test-Mode)
+## The RazorpayX Integration (Mock by Default, Real When Configured)
 
 The buildathon framing rewards showing a closed loop with a real audit trail, so
-Sahi Kharch adds one deliberately small, real integration: on approval, it triggers
-the reimbursement through RazorpayX Payouts in test mode.
+Sahi Kharch wires the full payout flow end to end — Contact, Fund Account,
+payout, and webhook. Because RazorpayX requires business KYC (PAN/GST) even for
+test-mode keys, the demo runs with `RAZORPAY_MOCK=1`: every API call is
+short-circuited with fake IDs and a "queued" state, so the loop and its audit
+trail work with no real credentials. Flip the flag off, drop in real keys, and
+the same code moves real money.
 
 1. **Contact:** each employee is one RazorpayX Contact, created on first use.
 2. **Fund Account:** the employee's bank account or UPI VPA linked to that
@@ -178,25 +183,28 @@ the reimbursement through RazorpayX Payouts in test mode.
    can never trigger a duplicate reimbursement.
 4. **Webhook:** RazorpayX sends lifecycle updates (queued, processing,
    processed, reversed, failed); Sahi Kharch updates the claim's audit trail, so
-   the record reads "Approved to Payout `pout_XXXX` to Processed on [date]".
+   the record reads "Approved to Payout `pout_XXXX` to Processed on [date]". In
+   mock mode the "Simulate processing" admin button replays this step.
 
-Scoped as "light" because test mode uses a dummy balance and payouts must be
-advanced manually from the dashboard, which is exactly right for a controlled
+Scoped as "light" because the demo default is a mock — the audit trail is real,
+the money isn't. With real keys, test mode uses a dummy balance and payouts must
+be advanced manually from the dashboard, which is exactly right for a controlled
 demo.
 
 ## Real-World Scenarios
 
 - **Field sales executive, Nagpur.** Uploads fuel and hotel receipts as photos,
   asks in Marathi whether the hotel charge clears the per-night cap. Gets an
-  instant verdict with the exact clause, and sees the reimbursement move to
-  processing if approved.
+  instant verdict with the exact clause, and sees the simulated reimbursement
+  move to processing if approved.
 - **Finance team, 500-person company, month-end.** Runs ~300 claims through the
   system and reviews only the small fraction the risk engine could not
   confidently resolve, each with evidence assembled.
 - **New employee.** Types a Hindi question about a dinner bill and gets a clear
   answer with the specific meal-allowance clause.
 - **Compliance review, six months later.** An auditor sees the exact cited
-  clause, risk score components, and payout ID in the immutable log in seconds.
+  clause, risk score components, and mock payout ID in the immutable log in
+  seconds.
 
 ## Product Specifics
 
@@ -212,18 +220,9 @@ compliance/audit.
    the product.
 2. Genuine Indian-language support including natural code-mixing, not a
    translated English UI.
-3. A closed reimbursement loop demonstrated against RazorpayX test-mode APIs.
+3. A closed reimbursement loop demonstrated against RazorpayX mock APIs (or
+   test-mode with real keys), with a full audit trail.
 4. Risk scoring instead of a binary gate, surfacing how risky and why.
-
-**Suggested MVP scope for the buildathon window:**
-
-- One realistic company expense policy document (synthesized for the demo).
-- 30 to 50 synthetic receipts spanning clean approvals, clear violations, and
-  ambiguous cases.
-- Full pipeline live for at least 5 languages (English, Hindi, Marathi, Telugu,
-  Kannada).
-- One complete end-to-end RazorpayX payout demonstrated live.
-- An exception dashboard with several claims routed to human review.
 
 **Metrics to report:**
 
@@ -275,3 +274,51 @@ npm run dev            # start the Vite dev server
 npm run build          # production build
 npm run lint           # lint with ESLint
 ```
+
+## Honest Final Thoughts
+
+We want to be straight with you about what's real, what's simulated, and where
+this goes next — because the parts that matter for a compliance product are the
+parts we built for real.
+
+**The payout loop is mocked at the money boundary, not faked.** RazorpayX
+requires business KYC (PAN/GST) to issue even test-mode keys — reasonable for a
+payment processor, a non-starter for a buildathon repo. So we wired the
+_entire_ loop for real — Contact creation, Fund Account linking, idempotent
+payouts keyed on the claim ID, and an HMAC-verified webhook that writes
+`payout_status` back into the immutable audit trail — then pointed the
+outermost call at a mock when `RAZORPAY_MOCK=1`. Flip the flag off, drop in
+real keys, and the same code moves real money. We'd rather show an honest mock
+than a screenshot of a dashboard we can't reproduce live.
+
+**A few other deliberate trade-offs, and what changes in production:**
+
+- **Firestore writes happen client-side, gated by security rules.** Perfect for
+  a demo with a handful of trusted users; in production every write would route
+  through the backend with `firebase-admin` (the way the payout routes already
+  do), so rules become defense-in-depth rather than the only gate.
+- **Clause retrieval is a brute-force cosine scan.** Fine for a 30–60 page
+  policy (a few hundred clauses); at thousands we'd swap in a real vector index
+  (pgvector, Pinecone, or Vertex Vector Search) — the `retrieveClauses`
+  interface wouldn't change.
+- **Batch runs are a client-side sequential LLM loop.** Great for a demo of ~20
+  claims; in production this is a durable job queue (Cloud Tasks / BullMQ) with
+  retries and per-claim isolation, so one slow receipt can't stall a batch.
+- **The consistency check re-runs the LLM independently per language** and
+  compares verdict + cited clauses — the real Section 8 metric, not a
+  translation round-trip. In production we'd cache the deterministic context
+  (rules + retrieval) across languages to cut cost.
+- **No rate limiting; compute routes are unauthenticated.** Fine behind a
+  trusted frontend; production adds Firebase token verification on every route
+  (the payout route already does this) and per-tenant quotas.
+
+**If we shipped this for real, the order would be:** real RazorpayX keys + a
+production webhook URL → move all Firestore writes server-side → vector index
+→ job queue for batches → per-route auth + rate limits → secret management (not
+`.env`) → observability (traces on every verdict so an auditor can replay a
+decision). None of that is research — it's a week of wiring, and the
+architecture is already shaped for it.
+
+The bet we're making: **explainability, multilingual access, and a real audit
+trail are the hard part of expense compliance — the payout is plumbing.** We
+built the hard part for real, and were honest about the plumbing.

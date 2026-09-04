@@ -3,7 +3,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // POST helper with exponential backoff on 429 / 5xx / network errors.
 // Returns the parsed JSON body.
 export async function postWithRetry(url, body, options = {}) {
-  const { headers = {}, attempts = 4, parseJson = true } = options;
+  const { headers = {}, attempts = 4 } = options;
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     let res;
@@ -18,7 +18,7 @@ export async function postWithRetry(url, body, options = {}) {
       res = null;
     }
     if (res && res.ok) {
-      return parseJson ? res.json() : res;
+      return res.json();
     }
     const text = res ? await res.text().catch(() => "") : "";
     // Non-retryable client error (4xx other than 429) → fail fast.

@@ -16,7 +16,7 @@
   },
   {
     "title": "Reimbursement triggered",
-    "body": "Approved claims move to payout through RazorpayX.",
+    "body": "Approved claims move to a simulated (mock) payout with a full audit trail.",
     "icon": "rupee"
   }
 ]

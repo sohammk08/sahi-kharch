@@ -13,7 +13,7 @@ function About() {
             co-pilot.
           </p>
           <p className="mt-8 max-w-2xl body-lg">
-            From a receipt photo to a cited verdict to a live payout — in your
+            From a receipt photo to a cited verdict to a simulated payout — in your
             own language. Sahi Kharch turns a policy PDF into a decision engine
             every employee can actually use.
           </p>
@@ -72,7 +72,7 @@ function About() {
         <div className="mx-auto max-w-6xl px-8 py-24 text-center md:px-12">
           <h2 className="headline">See Sahi Kharch close the loop</h2>
           <p className="mx-auto mt-4 max-w-xl body">
-            From a receipt photo to a cited verdict to a live payout — your own
+            From a receipt photo to a cited verdict to a simulated payout — your own
             language.
           </p>
           <div className="mt-10">

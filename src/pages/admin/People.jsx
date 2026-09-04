@@ -32,6 +32,10 @@ function People() {
     const name = form.get("name").trim();
     const email = form.get("email").trim();
     const password = form.get("password");
+    const holderName = form.get("holderName").trim();
+    const ifsc = form.get("ifsc").trim();
+    const accountNumber = form.get("accountNumber").trim();
+    const upiVpa = form.get("upiVpa").trim();
 
     if (!name) return setError("Name is required");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
@@ -52,6 +56,15 @@ function People() {
         email,
         role: "employee",
         createdAt: new Date(),
+        bankAccount:
+          accountNumber || upiVpa
+            ? {
+                holderName,
+                ifsc,
+                accountNumber,
+                vpa: upiVpa,
+              }
+            : null,
       });
       await signOut(secondaryAuth);
       e.target.reset();
@@ -111,6 +124,46 @@ function People() {
                 className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body placeholder:text-black/40"
               />
             </label>
+            <div className="mt-2 rounded-xl border border-[#f1f1f1] bg-[#f7f7f5] p-4">
+              <p className="caption text-black/50">
+                Bank / UPI details (used for RazorpayX payout; dummy values for
+                test mode)
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-2">
+                  <span className="caption text-black/50">Account holder</span>
+                  <input
+                    name="holderName"
+                    placeholder="Priya Sharma"
+                    className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2.5 body-sm placeholder:text-black/40"
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="caption text-black/50">IFSC</span>
+                  <input
+                    name="ifsc"
+                    placeholder="HDFC0000123"
+                    className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2.5 body-sm placeholder:text-black/40"
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="caption text-black/50">Account number</span>
+                  <input
+                    name="accountNumber"
+                    placeholder="000000012345"
+                    className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2.5 body-sm placeholder:text-black/40"
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="caption text-black/50">UPI VPA</span>
+                  <input
+                    name="upiVpa"
+                    placeholder="priya@okhdfc"
+                    className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2.5 body-sm placeholder:text-black/40"
+                  />
+                </label>
+              </div>
+            </div>
           </div>
           <div className="flex flex-col justify-between gap-4">
             {error && <p className="body-sm text-[#ff3d8b]">{error}</p>}

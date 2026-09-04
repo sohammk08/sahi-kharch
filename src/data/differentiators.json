@@ -8,8 +8,8 @@
     "body": "Real code-mixing and vernacular input via Sarvam AI, not a translated English UI."
   },
   {
-    "title": "Closed reimbursement loop",
-    "body": "Approval triggers a real payout through RazorpayX test-mode APIs \u2014 end to end."
+    "title": "Closed reimbursement loop (test/mock mode)",
+    "body": "Approval triggers a simulated payout (mock RazorpayX) and writes the full queued \u2192 processed audit trail \u2014 no real money moves."
   },
   {
     "title": "Risk scoring, not binary",
