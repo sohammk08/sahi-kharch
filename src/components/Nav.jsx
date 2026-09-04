@@ -5,11 +5,14 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const navLinks = [{ to: "/about", label: "About" }];
 const adminLinks = [
+  { to: "/admin/dashboard", label: "Dashboard" },
+  { to: "/admin/batch-run", label: "Batch Run" },
+  { to: "/admin/audit-trail", label: "Audit Trail" },
+  { to: "/admin/policy-versions", label: "Policy Versions" },
+  { to: "/admin/people", label: "People" },
   { to: "/admin/policy-upload", label: "Policy Upload" },
-  { to: "/admin/policy-library", label: "Policy Library" },
   { to: "/dev/receipt-tester", label: "Receipt Tester" },
   { to: "/dev/claim-console", label: "Claim Console" },
-  { to: "/dev/audit-log", label: "Audit Log" },
   { to: "/dev/consistency-check", label: "Consistency Check" },
 ];
 
@@ -29,7 +32,7 @@ function Nav() {
 
   return (
     <header className="bg-white text-black">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-8 md:px-12">
+      <div className="mx-auto flex h-14  items-center justify-between px-8 md:px-12">
         <div className="flex items-center gap-8">
           <Link to="/" className="text-lg font-semibold tracking-tight">
             Sahi Kharch

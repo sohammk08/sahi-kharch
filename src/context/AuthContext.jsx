@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
       uid: cred.user.uid,
       name,
       email,
-      role: "dev", // role forced client-side; Firestore rules enforce this value
+      role: "admin", // self-registration is for company admins/HRs; Firestore rules enforce this
       createdAt: serverTimestamp(),
     });
     return cred.user;

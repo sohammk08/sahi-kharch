@@ -24,7 +24,7 @@ function PolicyLibrary() {
     return unsub;
   }, [selected?.id]);
 
-  // Set up a real-time listener for policies and sort them by upload date
+  // Set up a real-time listener for policies and sort by effective date
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "policies"), (snap) => {
       setPolicies(
@@ -32,7 +32,8 @@ function PolicyLibrary() {
           .map((d) => ({ id: d.id, ...d.data() }))
           .sort(
             (a, b) =>
-              (a.uploadDate?.seconds || 0) - (b.uploadDate?.seconds || 0),
+              (a.effectiveFromDate?.toMillis?.() ?? 0) -
+              (b.effectiveFromDate?.toMillis?.() ?? 0),
           ),
       );
       setLoading(false);
@@ -43,7 +44,7 @@ function PolicyLibrary() {
   const fmtDate = (d) =>
     d instanceof Date
       ? d.toISOString().slice(0, 10)
-      : (d?.toDate?.()?.toISOString?.().slice(0, 10) ?? "—");
+      : (d?.toDate?.().toISOString?.().slice(0, 10) ?? "—");
 
   return (
     <main className="bg-[#f7f7f5] text-black">
@@ -61,7 +62,7 @@ function PolicyLibrary() {
               <thead>
                 <tr className="caption border-b border-[#e6e6e6] text-black/50">
                   <th className="px-6 py-4">Name</th>
-                  <th className="px-6 py-4">Effective</th>
+                  <th className="px-6 py-4">Effective range</th>
                   <th className="px-6 py-4">Clauses</th>
                   <th className="px-6 py-4">Uploaded</th>
                   <th className="px-6 py-4">Status</th>
@@ -79,6 +80,9 @@ function PolicyLibrary() {
                     <td className="px-6 py-4 body-sm font-[480]">{p.name}</td>
                     <td className="px-6 py-4 body-sm">
                       {fmtDate(p.effectiveFromDate)}
+                      {p.effectiveToDate
+                        ? ` → ${fmtDate(p.effectiveToDate)}`
+                        : " → present"}
                     </td>
                     <td className="px-6 py-4 body-sm">
                       {p.clauseCount ?? "—"}

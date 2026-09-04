@@ -30,6 +30,10 @@ function AuditLog() {
   const [selected, setSelected] = useState(null);
   const [bundle, setBundle] = useState(null);
   const [bundleLoading, setBundleLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [onlyOverride, setOnlyOverride] = useState(false);
 
   // Load the audit log once on mount
   useEffect(() => {
@@ -56,8 +60,18 @@ function AuditLog() {
     }
   };
 
-  const shown =
-    filter === "all" ? entries : entries.filter((e) => e.verdict === filter);
+  const shown = entries.filter((e) => {
+    if (filter !== "all" && e.verdict !== filter) return false;
+    if (onlyOverride && e.action !== "human_override") return false;
+    if (search) {
+      const name = (e.metadata?.employeeName ?? e.actorName ?? "").toLowerCase();
+      if (!name.includes(search.toLowerCase())) return false;
+    }
+    const ts = e.timestamp?.toMillis?.() ?? 0;
+    if (from && ts < new Date(from).getTime()) return false;
+    if (to && ts > new Date(`${to}T23:59:59`).getTime()) return false;
+    return true;
+  });
 
   return (
     <main className="bg-[#f7f7f5] text-black">
@@ -79,6 +93,42 @@ function AuditLog() {
               {f.replace("_", " ")}
             </button>
           ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by employee…"
+            className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2.5 body-sm placeholder:text-black/40"
+          />
+          <label className="flex items-center gap-2 body-sm">
+            <span className="caption text-black/50">From</span>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="rounded-lg border border-[#e6e6e6] bg-white px-3 py-2 body-sm"
+            />
+          </label>
+          <label className="flex items-center gap-2 body-sm">
+            <span className="caption text-black/50">To</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="rounded-lg border border-[#e6e6e6] bg-white px-3 py-2 body-sm"
+            />
+          </label>
+          <label className="flex items-center gap-2 body-sm">
+            <input
+              type="checkbox"
+              checked={onlyOverride}
+              onChange={(e) => setOnlyOverride(e.target.checked)}
+              className="size-4"
+            />
+            <span className="caption">Has override</span>
+          </label>
         </div>
 
         <div className="mt-6 overflow-x-auto rounded-3xl border border-[#e6e6e6] bg-white">

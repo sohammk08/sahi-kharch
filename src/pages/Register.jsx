@@ -37,7 +37,10 @@ function Register() {
         <div className="mx-auto max-w-md rounded-3xl border border-[#e6e6e6] bg-white p-12">
           <h1 className="eyebrow">Create account</h1>
           <h2 className="mt-4 headline">Join Sahi Kharch</h2>
-          <p className="mt-3 body">Register to upload policies and test receipt extraction.</p>
+          <p className="mt-3 body">
+            Registration is for company admins/HRs. If you&apos;re an employee,
+            contact your company admin to create an account for you.
+          </p>
 
           <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-6">
             <label className="flex flex-col gap-2">

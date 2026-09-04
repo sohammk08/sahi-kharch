@@ -73,6 +73,7 @@ function ReceiptTester() {
       await addDoc(collection(db, "receipts"), {
         uploadedBy: user.uid,
         uploadDate: serverTimestamp(),
+        fileName: file.name,
         fileUrl: "",
         extracted,
         confidence,

@@ -19,6 +19,7 @@ function PolicyUpload() {
   const [file, setFile] = useState(null);
   const [policyName, setPolicyName] = useState("");
   const [effectiveDate, setEffectiveDate] = useState("");
+  const [effectiveToDate, setEffectiveToDate] = useState("");
   const [status, setStatus] = useState(null); // "processing" | "parsed" | "failed"
   const [clauses, setClauses] = useState([]);
   const [error, setError] = useState("");
@@ -57,6 +58,7 @@ function PolicyUpload() {
       const policyRef = await addDoc(collection(db, "policies"), {
         name: policyName,
         effectiveFromDate: new Date(effectiveDate),
+        effectiveToDate: effectiveToDate ? new Date(effectiveToDate) : null,
         uploadDate: serverTimestamp(),
         uploadedBy: user.uid,
         status: "parsed",
@@ -137,6 +139,15 @@ function PolicyUpload() {
                 type="date"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
+                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body"
+              />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span className="body-sm font-[480]">Effective to (optional)</span>
+              <input
+                type="date"
+                value={effectiveToDate}
+                onChange={(e) => setEffectiveToDate(e.target.value)}
                 className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body"
               />
             </label>

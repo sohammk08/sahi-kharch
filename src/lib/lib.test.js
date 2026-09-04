@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { friendlyError } from "./errors.js";
 import { runRules } from "./rulesEngine.js";
 import { computeRiskScore } from "./riskScore.js";
+import { isNeedsReview, summarizeClaims } from "./review.js";
 
 test("runRules flags over-limit meals as critical", () => {
   const r = runRules(
@@ -102,4 +103,37 @@ test("friendlyError maps network failures to a reachability message", () => {
 test("friendlyError returns the generic fallback for unknown errors", () => {
   const out = friendlyError(new Error("some raw internal detail"));
   assert.equal(out, "Something went wrong. Please try again.");
+});
+
+test("isNeedsReview only matches un-reviewed needs_human_review claims", () => {
+  assert.ok(isNeedsReview({ verdict: "needs_human_review" }));
+  assert.ok(!isNeedsReview({ verdict: "approved" }));
+  assert.ok(!isNeedsReview({ verdict: "needs_human_review", reviewStatus: "approved" }));
+  assert.ok(!isNeedsReview(null));
+});
+
+test("summarizeClaims computes summary cards", () => {
+  const claims = [
+    { verdict: "approved" },
+    { verdict: "rejected" },
+    { verdict: "flagged" },
+    { verdict: "needs_human_review" },
+    { verdict: "needs_human_review", reviewStatus: "rejected" },
+  ];
+  // total 5: auto-resolved 2 (40%), flagged 1 (20%), needs review 1 (20%)
+  assert.deepEqual(summarizeClaims(claims), {
+    total: 5,
+    autoResolved: 40,
+    flagged: 20,
+    needsReview: 20,
+  });
+});
+
+test("summarizeClaims returns zeros for empty input", () => {
+  assert.deepEqual(summarizeClaims([]), {
+    total: 0,
+    autoResolved: 0,
+    flagged: 0,
+    needsReview: 0,
+  });
 });

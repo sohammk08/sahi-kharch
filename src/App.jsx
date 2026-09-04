@@ -2,11 +2,15 @@ import Ask from "./pages/Ask";
 import Login from "./pages/Login";
 import About from "./pages/About";
 import Nav from "./components/Nav";
+import People from "./pages/admin/People";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import Footer from "./components/Footer";
-import AuditLog from "./pages/dev/AuditLog";
+import Dashboard from "./pages/admin/Dashboard";
+import AuditLog from "./pages/admin/AuditLog";
 import { Routes, Route } from "react-router-dom";
+import BatchRun from "./pages/admin/BatchRun";
+import ClaimDetail from "./pages/admin/ClaimDetail";
 import ScrollToTop from "./components/ScrollToTop";
 import ClaimConsole from "./pages/dev/ClaimConsole";
 import ReceiptTester from "./pages/dev/ReceiptTester";
@@ -65,7 +69,7 @@ function App() {
           <Route
             path="/admin/policy-upload"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={["admin"]}>
                 <Nav />
                 <PolicyUpload />
               </ProtectedRoute>
@@ -74,16 +78,70 @@ function App() {
           <Route
             path="/admin/policy-library"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={["admin"]}>
                 <Nav />
                 <PolicyLibrary />
               </ProtectedRoute>
             }
           />
           <Route
+            path="/admin/policy-versions"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Nav />
+                <PolicyLibrary />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Nav />
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/claim/:id"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Nav />
+                <ClaimDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-trail"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Nav />
+                <AuditLog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/batch-run"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Nav />
+                <BatchRun />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/people"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <Nav />
+                <People />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dev/receipt-tester"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={["admin"]}>
                 <Nav />
                 <ReceiptTester />
               </ProtectedRoute>
@@ -92,18 +150,9 @@ function App() {
           <Route
             path="/dev/claim-console"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={["admin"]}>
                 <Nav />
                 <ClaimConsole />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dev/audit-log"
-            element={
-              <ProtectedRoute>
-                <Nav />
-                <AuditLog />
               </ProtectedRoute>
             }
           />
@@ -123,7 +172,7 @@ function App() {
           <Route
             path="/dev/consistency-check"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={["admin"]}>
                 <Nav />
                 <ConsistencyCheck />
               </ProtectedRoute>

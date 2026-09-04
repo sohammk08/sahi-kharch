@@ -27,9 +27,8 @@ function cosineSim(a, b) {
   return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
 }
 
-// Top-k clauses for a policy by cosine similarity against the query embedding.
-// ponytail: O(n) brute-force scan, fine for small policies; swap for a Firestore
-// vector index / external store if a policy ever has thousands of clauses.
+// Retrieves top-k policy clauses by cosine similarity against the query embedding
+// Uses an O(n) brute-force scan, but should be replaced by a vector index if policies grow to thousands of clauses
 async function retrieveClauses(policyId, queryEmbedding, k = 5) {
   const snap = await getDocs(collection(db, "policies", policyId, "clauses"));
   const clauses = snap.docs.map((d) => {
@@ -166,6 +165,10 @@ export async function runVerdict({
   const receipt = { id: receiptSnap.id, ...receiptSnap.data() };
   const policySnap = await getDoc(doc(db, "policies", policyId));
   const policy = { id: policySnap.id, ...policySnap.data() };
+  const employeeSnap = await getDoc(doc(db, "users", employeeId));
+  const employee = employeeSnap.exists()
+    ? { id: employeeSnap.id, ...employeeSnap.data() }
+    : { name: null };
 
   step("Running deterministic rules…");
   const allReceipts = await getDocs(collection(db, "receipts"));
@@ -234,6 +237,10 @@ export async function runVerdict({
     citedClauseIds: llmOutput.citedClauseIds,
     evidenceBundleId: bundleRef.id,
     riskScore,
+    employeeName: employee.name,
+    amount: ext.amount ?? null,
+    category: ext.category ?? null,
+    receiptDate: ext.date ?? null,
     adjudicatedAt: serverTimestamp(),
   });
 
@@ -247,7 +254,7 @@ export async function runVerdict({
     riskScore: riskScore.overall,
     citedClauseIds: llmOutput.citedClauseIds,
     evidenceBundleId: bundleRef.id,
-    metadata: { policyId, employeeId },
+    metadata: { policyId, employeeId, employeeName: employee.name },
   });
 
   step("Done.");
@@ -270,9 +277,84 @@ export async function createClaimAndRunVerdict(args) {
     receiptId: args.receiptId,
     policyId: args.policyId,
     employeeId: args.employeeId,
+    batchId: args.batchId ?? null,
     status: "draft",
     createdAt: serverTimestamp(),
   });
+  await addDoc(collection(db, "audit_log"), {
+    claimId: claimRef.id,
+    timestamp: serverTimestamp(),
+    action: "claim_created",
+    actorId: args.actorId,
+    actorName: args.actorName,
+    metadata: {
+      policyId: args.policyId,
+      employeeId: args.employeeId,
+    },
+  });
   const result = await runVerdict({ ...args, claimId: claimRef.id });
   return { claimId: claimRef.id, ...result };
+}
+
+// Human decision on a claim (approve/reject/request more info). Writes the
+// review fields back to the claim and appends a "human_override" audit entry.
+export async function overrideClaim({
+  claimId,
+  decision,
+  comment,
+  actorId,
+  actorName,
+}) {
+  const claimSnap = await getDoc(doc(db, "claims", claimId));
+  const claim = claimSnap.exists()
+    ? { id: claimSnap.id, ...claimSnap.data() }
+    : {};
+
+  await updateDoc(doc(db, "claims", claimId), {
+    reviewStatus: decision,
+    reviewedBy: actorId,
+    reviewedByName: actorName,
+    reviewComment: comment ?? "",
+    reviewedAt: serverTimestamp(),
+  });
+
+  await addDoc(collection(db, "audit_log"), {
+    claimId,
+    timestamp: serverTimestamp(),
+    action: "human_override",
+    actorId,
+    actorName,
+    verdict: decision,
+    comment: comment ?? "",
+    evidenceBundleId: claim.evidenceBundleId ?? null,
+    riskScore: claim.riskScore?.overall ?? null,
+    metadata: {
+      policyId: claim.policyId ?? null,
+      employeeId: claim.employeeId ?? null,
+      employeeName: claim.employeeName ?? null,
+    },
+  });
+}
+
+// Run the verdict pipeline over many (receipt, employee, policy) tuples. All
+// claims share a batchId so the dashboard can filter to one batch.
+// ponytail: client-side sequential LLM loop; move to a backend job queue if a
+// batch is ever large (each claim = 1 embed + 1 LLM call).
+export async function batchRun({ items, actorId, actorName, onProgress }) {
+  const batchId =
+    Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const total = items.length;
+  let done = 0;
+  for (const item of items) {
+    await createClaimAndRunVerdict({
+      ...item,
+      batchId,
+      actorId,
+      actorName,
+      onStep: (msg) => onProgress?.(done, total, msg),
+    });
+    done += 1;
+    onProgress?.(done, total, "Done");
+  }
+  return batchId;
 }
