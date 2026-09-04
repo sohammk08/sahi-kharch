@@ -5,6 +5,7 @@ import Nav from "./components/Nav";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import Footer from "./components/Footer";
+import NotFound from "./pages/NotFound";
 import People from "./pages/admin/People";
 import Policy from "./pages/admin/Policy";
 import BatchRun from "./pages/admin/BatchRun";
@@ -157,6 +158,16 @@ function App() {
                 <Nav />
                 <ConsistencyCheck />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <>
+                <Nav />
+                <NotFound />
+                <Footer />
+              </>
             }
           />
         </Routes>

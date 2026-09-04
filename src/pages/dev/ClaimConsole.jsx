@@ -5,30 +5,7 @@ import { useAuth } from "../../context/useAuth.js";
 import { friendlyError } from "../../lib/errors.js";
 import { collection, getDocs } from "firebase/firestore";
 import { createClaimAndRunVerdict } from "../../lib/pipeline.js";
-
-const VERDICT_STYLES = {
-  approved: { label: "Approved", cls: "bg-[#dceeb1] text-black" },
-  flagged: { label: "Flagged", cls: "bg-[#f4ecd6] text-black" },
-  rejected: { label: "Rejected", cls: "bg-[#efd4d4] text-black" },
-  needs_human_review: {
-    label: "Needs Human Review",
-    cls: "bg-[#d3e3f5] text-black",
-  },
-};
-
-// Time formatter
-function fmtDate(v) {
-  if (!v) return "—";
-  if (typeof v === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(v)) return v;
-  const d = v?.toDate ? v.toDate() : new Date(v);
-  return isNaN(d) ? "—" : d.toISOString().slice(0, 10);
-}
-
-const receiptLabel = (r) => {
-  const e = r.extracted ?? {};
-  const amt = typeof e.amount === "number" ? `₹${e.amount}` : "?";
-  return `${e.vendor || "Unknown vendor"} — ${amt} (${e.date || "no date"})`;
-};
+import { VERDICT_STYLES, fmtDate, receiptLabel } from "../../lib/ui.js";
 
 function ClaimConsole() {
   const { user, profile } = useAuth();
@@ -168,9 +145,10 @@ function ClaimConsole() {
                 <div>
                   <p className="caption text-black/50">Verdict</p>
                   <span
-                    className={`mt-2 inline-block rounded-full px-4 py-1.5 ${VERDICT_STYLES[result.llmOutput.verdict].cls}`}
+                    className={`mt-2 inline-block rounded-full px-4 py-1.5 ${VERDICT_STYLES[result.llmOutput.verdict]?.cls ?? "bg-[#f1f1f1]"}`}
                   >
-                    {VERDICT_STYLES[result.llmOutput.verdict].label}
+                    {VERDICT_STYLES[result.llmOutput.verdict]?.label ??
+                      result.llmOutput.verdict}
                   </span>
                   <p className="mt-3 body text-black/80">
                     {result.llmOutput.reasoning}

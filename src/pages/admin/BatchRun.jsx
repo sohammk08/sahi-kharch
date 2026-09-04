@@ -5,19 +5,7 @@ import { batchRun } from "../../lib/pipeline.js";
 import { useAuth } from "../../context/useAuth.js";
 import { friendlyError } from "../../lib/errors.js";
 import { collection, getDocs } from "firebase/firestore";
-
-function fmtDate(v) {
-  if (!v) return "—";
-  if (typeof v === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(v)) return v;
-  const d = v?.toDate ? v.toDate() : new Date(v);
-  return isNaN(d) ? "—" : d.toISOString().slice(0, 10);
-}
-
-const receiptLabel = (r) => {
-  const e = r.extracted ?? {};
-  const amt = typeof e.amount === "number" ? `₹${e.amount}` : "?";
-  return `${e.vendor || "Unknown vendor"} — ${amt} (${e.date || "no date"})`;
-};
+import { fmtDate, receiptLabel } from "../../lib/ui.js";
 
 function BatchRun() {
   const { user, profile } = useAuth();

@@ -1,21 +1,9 @@
 import { useState, useEffect } from "react";
+import { db } from "../../firebase.js";
 import { useSearchParams, Link } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebase.js";
+import { VERDICT_STYLES, fmtDate } from "../../lib/ui.js";
 import { isNeedsReview, summarizeClaims } from "../../lib/review.js";
-
-const VERDICT_STYLES = {
-  approved: "bg-[#dceeb1] text-black",
-  flagged: "bg-[#f4ecd6] text-black",
-  rejected: "bg-[#efd4d4] text-black",
-  needs_human_review: "bg-[#d3e3f5] text-black",
-};
-
-function fmtDate(v) {
-  if (!v) return "—";
-  const d = v?.toDate ? v.toDate() : new Date(v);
-  return isNaN(d) ? "—" : d.toISOString().slice(0, 10);
-}
 
 const CARDS = [
   { key: "total", label: "Total claims", suffix: "" },
@@ -37,7 +25,8 @@ function Dashboard() {
           snap.docs
             .map((d) => ({ id: d.id, ...d.data() }))
             .sort(
-              (a, b) => (b.riskScore?.overall ?? 0) - (a.riskScore?.overall ?? 0),
+              (a, b) =>
+                (b.riskScore?.overall ?? 0) - (a.riskScore?.overall ?? 0),
             ),
         ),
       )
@@ -79,7 +68,10 @@ function Dashboard() {
             <p className="p-8 body">Loading…</p>
           ) : queue.length === 0 ? (
             <p className="p-8 body">
-              No claims need review right now. {scoped.length > 0 ? "All clear." : "Run a batch to populate claims."}
+              No claims need review right now.{" "}
+              {scoped.length > 0
+                ? "All clear."
+                : "Run a batch to populate claims."}
             </p>
           ) : (
             <table className="w-full text-left">
@@ -120,7 +112,7 @@ function Dashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`caption rounded-full px-3 py-1 ${VERDICT_STYLES[c.verdict] ?? "bg-[#f1f1f1]"}`}
+                        className={`caption rounded-full px-3 py-1 ${VERDICT_STYLES[c.verdict]?.cls ?? "bg-[#f1f1f1]"}`}
                       >
                         {c.verdict?.replace("_", " ") ?? "—"}
                       </span>

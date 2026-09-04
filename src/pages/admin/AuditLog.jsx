@@ -1,14 +1,9 @@
 import { db } from "../../firebase.js";
 import { useState, useEffect } from "react";
 import { FaArrowRight, FaXmark } from "react-icons/fa6";
+import { VERDICT_STYLES, fmtTime } from "../../lib/ui.js";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 
-const VERDICT_STYLES = {
-  approved: "bg-[#dceeb1] text-black",
-  flagged: "bg-[#f4ecd6] text-black",
-  rejected: "bg-[#efd4d4] text-black",
-  needs_human_review: "bg-[#d3e3f5] text-black",
-};
 const FILTERS = [
   "all",
   "approved",
@@ -16,12 +11,6 @@ const FILTERS = [
   "rejected",
   "needs_human_review",
 ];
-
-// Time formatter
-function fmtTime(v) {
-  const d = v?.toDate ? v.toDate() : new Date(v);
-  return isNaN(d) ? "—" : d.toLocaleString();
-}
 
 function AuditLog() {
   const [entries, setEntries] = useState([]);
@@ -64,7 +53,11 @@ function AuditLog() {
     if (filter !== "all" && e.verdict !== filter) return false;
     if (onlyOverride && e.action !== "human_override") return false;
     if (search) {
-      const name = (e.metadata?.employeeName ?? e.actorName ?? "").toLowerCase();
+      const name = (
+        e.metadata?.employeeName ??
+        e.actorName ??
+        ""
+      ).toLowerCase();
       if (!name.includes(search.toLowerCase())) return false;
     }
     const ts = e.timestamp?.toMillis?.() ?? 0;
@@ -165,7 +158,7 @@ function AuditLog() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`caption rounded-full px-3 py-1 capitalize ${VERDICT_STYLES[e.verdict] ?? "bg-[#f1f1f1]"}`}
+                        className={`caption rounded-full px-3 py-1 capitalize ${VERDICT_STYLES[e.verdict]?.cls ?? "bg-[#f1f1f1]"}`}
                       >
                         {e.verdict?.replace("_", " ")}
                       </span>

@@ -7,6 +7,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
+import { fmtTime } from "../../lib/ui.js";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { TbFileDescription } from "react-icons/tb";
@@ -29,11 +30,6 @@ const ACTION_STYLES = {
   rejected: { label: "Reject", cls: "bg-[#efd4d4] text-black" },
   more_info: { label: "Request More Info", cls: "bg-[#f4ecd6] text-black" },
 };
-
-function fmtTime(v) {
-  const d = v?.toDate ? v.toDate() : new Date(v);
-  return isNaN(d) ? "—" : d.toLocaleString();
-}
 
 function ClaimDetail() {
   const { id } = useParams();

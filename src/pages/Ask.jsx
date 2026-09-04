@@ -1,19 +1,17 @@
 import {
-  addDoc,
-  getDocs,
-  collection,
-  serverTimestamp,
-} from "firebase/firestore";
+  speakText,
+  translateText,
+  transcribeAudio,
+  parseAndSaveReceipt,
+} from "../lib/api.js";
 import { db } from "../firebase.js";
 import { useAuth } from "../context/useAuth.js";
 import { friendlyError } from "../lib/errors.js";
 import { useState, useEffect, useRef } from "react";
 import SidePanel from "../components/ask/SidePanel.jsx";
+import { getDocs, collection } from "firebase/firestore";
 import ChatSection from "../components/ask/ChatSection.jsx";
 import { createClaimAndRunVerdict } from "../lib/pipeline.js";
-import { translateText, speakText, transcribeAudio } from "../lib/api.js";
-
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 // Recording limits: 1s floor so a tap doesn't yield empty audio, 30s hard cap
 // (Sarvam's STT rejects anything longer)
@@ -68,31 +66,10 @@ function Ask() {
     setUploading(true);
     setUploadError("");
     setAttachedName("");
-    const form = new FormData();
-    form.append("file", file);
-
     try {
-      const res = await fetch(`${API}/api/receipts/parse`, {
-        method: "POST",
-        body: form,
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Extraction failed");
-      }
-      const { extracted, confidence } = await res.json();
-
-      const ref = await addDoc(collection(db, "receipts"), {
-        uploadedBy: user.uid,
-        uploadDate: serverTimestamp(),
-        fileName: file.name,
-        fileUrl: "",
-        extracted,
-        confidence,
-        status: "parsed",
-      });
-      setReceiptId(ref.id);
-      setAttachedName(file.name);
+      const { id, fileName } = await parseAndSaveReceipt(file, user.uid);
+      setReceiptId(id);
+      setAttachedName(fileName);
     } catch (err) {
       setUploadError(friendlyError(err));
     } finally {

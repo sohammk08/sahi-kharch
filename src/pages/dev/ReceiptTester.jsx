@@ -1,11 +1,8 @@
 import { useState } from "react";
-import { db } from "../../firebase.js";
 import { TbUpload } from "react-icons/tb";
 import { useAuth } from "../../context/useAuth.js";
 import { friendlyError } from "../../lib/errors.js";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+import { parseAndSaveReceipt } from "../../lib/api.js";
 
 const FIELDS = ["vendor", "date", "amount", "currency", "taxOrGST", "category"];
 const LABELS = {
@@ -53,32 +50,13 @@ function ReceiptTester() {
     setError("");
     setResult(null);
 
-    const form = new FormData();
-    form.append("file", file);
-
     try {
-      // 1. Send the file to the backend, which runs Sarvam extraction.
-      const res = await fetch(`${API}/api/receipts/parse`, {
-        method: "POST",
-        body: form,
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Extraction failed");
-      }
-      const { extracted, confidence } = await res.json();
+      // Parse via the backend (Sarvam) and save to Firestore as a receipt
+      const { extracted, confidence } = await parseAndSaveReceipt(
+        file,
+        user.uid,
+      );
       setResult({ extracted, confidence });
-
-      // 2. Save the result to Firestore as a new "receipts" document
-      await addDoc(collection(db, "receipts"), {
-        uploadedBy: user.uid,
-        uploadDate: serverTimestamp(),
-        fileName: file.name,
-        fileUrl: "",
-        extracted,
-        confidence,
-        status: "parsed",
-      });
     } catch (err) {
       setError(friendlyError(err));
     } finally {

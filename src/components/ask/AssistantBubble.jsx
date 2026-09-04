@@ -1,5 +1,6 @@
+import { label } from "./shared.js";
+import { VERDICT_STYLES } from "../../lib/ui.js";
 import { useState, useEffect, useRef } from "react";
-import { VERDICT_STYLES, label } from "./shared.js";
 import { FaSpinner, FaVolumeHigh } from "react-icons/fa6";
 
 function AssistantBubble({ msg, lang, onPlay, onError }) {

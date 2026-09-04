@@ -1,5 +1,6 @@
-import { fmtDate, chipCls, selectorCls, chipActiveCls } from "./shared.js";
+import { fmtDate } from "../../lib/ui.js";
 import { LANGUAGES } from "../../lib/languages.js";
+import { chipCls, selectorCls, chipActiveCls } from "./shared.js";
 
 function SidePanel({
   lang,

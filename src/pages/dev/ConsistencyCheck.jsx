@@ -1,32 +1,12 @@
-import { useState, useEffect } from "react";
 import { db } from "../../firebase.js";
-import { useAuth } from "../../context/useAuth.js";
-import { collection, getDocs } from "firebase/firestore";
+import { useState, useEffect } from "react";
 import { translateText } from "../../lib/api.js";
+import { useAuth } from "../../context/useAuth.js";
+import { friendlyError } from "../../lib/errors.js";
+import { collection, getDocs } from "firebase/firestore";
 import { LANGUAGES, LANG_BY_CODE } from "../../lib/languages.js";
 import { createClaimAndRunVerdict } from "../../lib/pipeline.js";
-import { friendlyError } from "../../lib/errors.js";
-
-const VERDICT_STYLES = {
-  approved: "bg-[#dceeb1] text-black",
-  flagged: "bg-[#f4ecd6] text-black",
-  rejected: "bg-[#efd4d4] text-black",
-  needs_human_review: "bg-[#d3e3f5] text-black",
-};
-
-// Receipt label formatter
-const receiptLabel = (r) => {
-  const e = r.extracted ?? {};
-  const amt = typeof e.amount === "number" ? `₹${e.amount}` : "?";
-  return `${e.vendor || "Unknown"} — ${amt}`;
-};
-
-// Date formatter
-function fmtDate(v) {
-  if (!v) return "—";
-  const d = v?.toDate ? v.toDate() : new Date(v);
-  return isNaN(d) ? "—" : d.toISOString().slice(0, 10);
-}
+import { VERDICT_STYLES, fmtDate, receiptLabel } from "../../lib/ui.js";
 
 function ConsistencyCheck() {
   const { user, profile } = useAuth();
@@ -216,7 +196,7 @@ function ConsistencyCheck() {
                     </span>
                     <span
                       className={`caption rounded-full px-3 py-1 ${
-                        VERDICT_STYLES[result.verdict] ?? "bg-[#f1f1f1]"
+                        VERDICT_STYLES[result.verdict]?.cls ?? "bg-[#f1f1f1]"
                       }`}
                     >
                       {result.verdict?.replace("_", " ")}

@@ -1,4 +1,5 @@
 import { db } from "../../firebase.js";
+import { fmtDate } from "../../lib/ui.js";
 import { useEffect, useState } from "react";
 import { FaArrowRight, FaXmark } from "react-icons/fa6";
 import { collection, onSnapshot } from "firebase/firestore";
@@ -40,11 +41,6 @@ function PolicyLibrary() {
     });
     return unsub;
   }, []);
-
-  const fmtDate = (d) =>
-    d instanceof Date
-      ? d.toISOString().slice(0, 10)
-      : (d?.toDate?.().toISOString?.().slice(0, 10) ?? "—");
 
   return (
     <section>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/useAuth.js";
 import { FaBars, FaXmark } from "react-icons/fa6";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const navLinks = [{ to: "/about", label: "About" }];
 const adminLinks = [
@@ -19,8 +19,7 @@ function Nav() {
   const [open, setOpen] = useState(false);
   const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/dev");
+  const isAdmin = profile?.role === "admin";
   const links = isAdmin
     ? adminLinks
     : navLinks.filter((l) => l.to !== "/about" || !user);

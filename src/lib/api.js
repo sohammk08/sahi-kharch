@@ -1,4 +1,33 @@
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+import { db } from "../firebase.js";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+
+export const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
+// Parse a receipt via the backend and persist it to Firestore. Returns the
+// saved doc's id and parsed fields; throws on failure.
+export async function parseAndSaveReceipt(file, userId) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API}/api/receipts/parse`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || "Extraction failed");
+  }
+  const { extracted, confidence } = await res.json();
+  const ref = await addDoc(collection(db, "receipts"), {
+    uploadedBy: userId,
+    uploadDate: serverTimestamp(),
+    fileName: file.name,
+    fileUrl: "",
+    extracted,
+    confidence,
+    status: "parsed",
+  });
+  return { id: ref.id, fileName: file.name, extracted, confidence };
+}
 
 // Small JSON fetch helper against our backend. The backend endpoints are
 // computation-only (embedding, LLM); Firestore data flows through the Web SDK.

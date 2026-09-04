@@ -5,6 +5,7 @@ import { runRules, enforceRules } from "./rulesEngine.js";
 import { normalizeVerdict, parseVerdict } from "./verdict.js";
 import { computeRiskScore } from "./riskScore.js";
 import { isNeedsReview, summarizeClaims } from "./review.js";
+import { fmtDate } from "./ui.js";
 
 test("runRules flags over-limit meals as critical", () => {
   const r = runRules(
@@ -187,4 +188,20 @@ test("enforceRules leaves non-approved verdicts alone", () => {
   const out = { verdict: "flagged" };
   enforceRules(out, { severity: "critical", violations: [] });
   assert.equal(out.verdict, "flagged");
+});
+
+test("fmtDate passes through DD/MM/YYYY strings", () => {
+  assert.equal(fmtDate("15/01/2026"), "15/01/2026");
+});
+
+test("fmtDate formats Firestore timestamps and Date objects", () => {
+  const ts = { toDate: () => new Date("2026-01-15T12:00:00Z") };
+  assert.equal(fmtDate(ts), "2026-01-15");
+  assert.equal(fmtDate(new Date("2026-01-15T12:00:00Z")), "2026-01-15");
+});
+
+test("fmtDate returns a dash for null and invalid values", () => {
+  assert.equal(fmtDate(null), "—");
+  assert.equal(fmtDate(undefined), "—");
+  assert.equal(fmtDate("garbage"), "—");
 });
