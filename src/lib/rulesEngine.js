@@ -75,3 +75,18 @@ export function runRules(receipt, policy, otherReceipts = []) {
 
   return { passed: violations.length === 0, violations, severity };
 }
+
+// Hard gate: override the LLM verdict when deterministic rules found a
+// clear-cut problem the model might have missed or mis-weighted. Mutates
+// llmOutput in place. Pure aside from that side effect.
+export function enforceRules(llmOutput, rulesOutput) {
+  if (rulesOutput?.severity === "critical" && llmOutput.verdict === "approved") {
+    llmOutput.verdict = "rejected";
+  }
+  const missingRequired = rulesOutput?.violations?.some(
+    (v) => v.rule === "required_field",
+  );
+  if (missingRequired && llmOutput.verdict === "approved") {
+    llmOutput.verdict = "needs_human_review";
+  }
+}

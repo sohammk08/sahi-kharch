@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { friendlyError } from "./errors.js";
-import { runRules } from "./rulesEngine.js";
+import { runRules, enforceRules } from "./rulesEngine.js";
+import { normalizeVerdict, parseVerdict } from "./verdict.js";
 import { computeRiskScore } from "./riskScore.js";
 import { isNeedsReview, summarizeClaims } from "./review.js";
 
@@ -136,4 +137,54 @@ test("summarizeClaims returns zeros for empty input", () => {
     flagged: 0,
     needsReview: 0,
   });
+});
+
+test("normalizeVerdict maps casing, whitespace, and aliases", () => {
+  assert.equal(normalizeVerdict("Approved"), "approved");
+  assert.equal(normalizeVerdict(" approved "), "approved");
+  assert.equal(normalizeVerdict("approve"), "approved");
+  assert.equal(normalizeVerdict("reject"), "rejected");
+  assert.equal(normalizeVerdict("flag"), "flagged");
+  assert.equal(normalizeVerdict("review"), "needs_human_review");
+  assert.equal(normalizeVerdict("bogus"), "needs_human_review");
+  assert.equal(normalizeVerdict(null), "needs_human_review");
+});
+
+test("parseVerdict normalizes verdict and clamps confidence", () => {
+  const out = parseVerdict(
+    '{"verdict":"Approved","citedClauseIds":["1"],"reasoning":"ok","confidence":2.5}',
+  );
+  assert.equal(out.verdict, "approved");
+  assert.equal(out.confidence, 1);
+});
+
+test("parseVerdict falls back to needs_human_review on bad JSON", () => {
+  const out = parseVerdict("not json at all");
+  assert.deepEqual(out, {
+    verdict: "needs_human_review",
+    citedClauseIds: [],
+    reasoning: "",
+    confidence: 0,
+  });
+});
+
+test("enforceRules rejects approved on critical severity", () => {
+  const out = { verdict: "approved" };
+  enforceRules(out, { severity: "critical", violations: [] });
+  assert.equal(out.verdict, "rejected");
+});
+
+test("enforceRules sends approved to review on missing required field", () => {
+  const out = { verdict: "approved" };
+  enforceRules(out, {
+    severity: "major",
+    violations: [{ rule: "required_field" }],
+  });
+  assert.equal(out.verdict, "needs_human_review");
+});
+
+test("enforceRules leaves non-approved verdicts alone", () => {
+  const out = { verdict: "flagged" };
+  enforceRules(out, { severity: "critical", violations: [] });
+  assert.equal(out.verdict, "flagged");
 });

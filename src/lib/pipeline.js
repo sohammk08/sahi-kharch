@@ -10,10 +10,9 @@ import {
 } from "firebase/firestore";
 import { apiCall } from "./api.js";
 import { db } from "../firebase.js";
-import { runRules } from "./rulesEngine.js";
+import { runRules, enforceRules } from "./rulesEngine.js";
 import { computeRiskScore } from "./riskScore.js";
-
-const VERDICTS = ["approved", "flagged", "rejected", "needs_human_review"];
+import { parseVerdict } from "./verdict.js";
 
 function cosineSim(a, b) {
   let dot = 0;
@@ -87,32 +86,6 @@ function buildUserPrompt({ receiptData, retrievedClauses, rulesOutput }) {
     null,
     2,
   );
-}
-
-export function parseVerdict(content) {
-  try {
-    const parsed = JSON.parse(content);
-    return {
-      verdict: VERDICTS.includes(parsed.verdict)
-        ? parsed.verdict
-        : "needs_human_review",
-      citedClauseIds: Array.isArray(parsed.citedClauseIds)
-        ? parsed.citedClauseIds
-        : [],
-      reasoning: typeof parsed.reasoning === "string" ? parsed.reasoning : "",
-      confidence:
-        typeof parsed.confidence === "number"
-          ? Math.min(Math.max(parsed.confidence, 0), 1)
-          : 0,
-    };
-  } catch {
-    return {
-      verdict: "needs_human_review",
-      citedClauseIds: [],
-      reasoning: "",
-      confidence: 0,
-    };
-  }
 }
 
 function anomalyScore(rulesOutput) {
@@ -206,6 +179,11 @@ export async function runVerdict({
   });
 
   const llmOutput = parseVerdict(content);
+  const knownIds = new Set(retrievedClauses.map((c) => c.clauseId));
+  llmOutput.citedClauseIds = llmOutput.citedClauseIds.filter((id) =>
+    knownIds.has(id),
+  );
+  enforceRules(llmOutput, rulesOutput);
 
   step("Computing risk score…");
   const riskScore = computeRiskScore({
@@ -280,17 +258,6 @@ export async function createClaimAndRunVerdict(args) {
     batchId: args.batchId ?? null,
     status: "draft",
     createdAt: serverTimestamp(),
-  });
-  await addDoc(collection(db, "audit_log"), {
-    claimId: claimRef.id,
-    timestamp: serverTimestamp(),
-    action: "claim_created",
-    actorId: args.actorId,
-    actorName: args.actorName,
-    metadata: {
-      policyId: args.policyId,
-      employeeId: args.employeeId,
-    },
   });
   const result = await runVerdict({ ...args, claimId: claimRef.id });
   return { claimId: claimRef.id, ...result };

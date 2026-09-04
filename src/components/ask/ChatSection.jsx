@@ -31,7 +31,7 @@ export default function ChatSection({
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 space-y-5 overflow-y-auto rounded-3xl border border-[#e6e6e6] bg-white p-6"
+        className="max-h-135 flex-1 space-y-5 rounded-3xl border border-[#e6e6e6] bg-white overflow-y-scroll p-6"
       >
         {messages.length === 0 && (
           <p className="body-sm text-black/60">
