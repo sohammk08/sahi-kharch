@@ -47,12 +47,14 @@ function PolicyLibrary() {
       : (d?.toDate?.().toISOString?.().slice(0, 10) ?? "—");
 
   return (
-    <main className="bg-[#f7f7f5] text-black">
-      <div className="mx-auto max-w-6xl px-8 py-16 md:px-12">
-        <h1 className="eyebrow">Policy Library</h1>
-        <p className="mt-3 body">All uploaded policy versions.</p>
+    <section>
+      <div>
+        <h2 className="headline">Versions</h2>
+        <p className="mt-1 body-sm text-black/60">
+          All uploaded policy versions.
+        </p>
 
-        <div className="mt-10 overflow-x-auto rounded-3xl border border-[#e6e6e6] bg-white">
+        <div className="mt-6 overflow-x-auto rounded-3xl border border-[#e6e6e6] bg-white">
           {loading ? (
             <p className="p-8 body">Loading…</p>
           ) : policies.length === 0 ? (
@@ -222,7 +224,7 @@ function PolicyLibrary() {
           </>
         )}
       </aside>
-    </main>
+    </section>
   );
 }
 

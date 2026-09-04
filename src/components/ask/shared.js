@@ -48,10 +48,3 @@ export const fmtDate = (v) => {
   const d = v?.toDate ? v.toDate() : new Date(v);
   return isNaN(d) ? "—" : d.toISOString().slice(0, 10);
 };
-
-// Receipt label for display in the UI
-export const receiptLabel = (r) => {
-  const e = r.extracted ?? {};
-  const amt = typeof e.amount === "number" ? `₹${e.amount}` : "?";
-  return `${e.vendor || "Unknown vendor"} — ${amt} (${e.date || "no date"})`;
-};

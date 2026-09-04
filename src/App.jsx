@@ -2,20 +2,19 @@ import Ask from "./pages/Ask";
 import Login from "./pages/Login";
 import About from "./pages/About";
 import Nav from "./components/Nav";
-import People from "./pages/admin/People";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import Footer from "./components/Footer";
-import Dashboard from "./pages/admin/Dashboard";
-import AuditLog from "./pages/admin/AuditLog";
-import { Routes, Route } from "react-router-dom";
+import People from "./pages/admin/People";
+import Policy from "./pages/admin/Policy";
 import BatchRun from "./pages/admin/BatchRun";
+import AuditLog from "./pages/admin/AuditLog";
+import Dashboard from "./pages/admin/Dashboard";
+import { Routes, Route } from "react-router-dom";
 import ClaimDetail from "./pages/admin/ClaimDetail";
 import ScrollToTop from "./components/ScrollToTop";
 import ClaimConsole from "./pages/dev/ClaimConsole";
 import ReceiptTester from "./pages/dev/ReceiptTester";
-import PolicyUpload from "./pages/admin/PolicyUpload";
-import PolicyLibrary from "./pages/admin/PolicyLibrary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ConsistencyCheck from "./pages/dev/ConsistencyCheck";
@@ -67,29 +66,11 @@ function App() {
             }
           />
           <Route
-            path="/admin/policy-upload"
+            path="/admin/policy"
             element={
               <ProtectedRoute roles={["admin"]}>
                 <Nav />
-                <PolicyUpload />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/policy-library"
-            element={
-              <ProtectedRoute roles={["admin"]}>
-                <Nav />
-                <PolicyLibrary />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/policy-versions"
-            element={
-              <ProtectedRoute roles={["admin"]}>
-                <Nav />
-                <PolicyLibrary />
+                <Policy />
               </ProtectedRoute>
             }
           />

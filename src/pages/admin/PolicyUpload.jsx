@@ -98,18 +98,18 @@ function PolicyUpload() {
   };
 
   return (
-    <main className="bg-[#f7f7f5] text-black">
-      <div className="mx-auto max-w-6xl px-8 py-16 md:px-12">
-        <h1 className="eyebrow">Policy Upload</h1>
-        <p className="mt-3 body">
+    <section>
+      <div>
+        <h2 className="headline">Upload</h2>
+        <p className="mt-1 body-sm text-black/60">
           Upload a policy PDF — it&apos;s parsed into numbered clauses.
         </p>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-10 grid gap-8 rounded-3xl border border-[#e6e6e6] bg-white p-8 lg:grid-cols-[1fr_320px]"
+          className="mt-4 flex flex-col gap-5 rounded-3xl border border-[#e6e6e6] bg-white p-6"
         >
-          <label className="flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#e6e6e6] bg-[#f7f7f5] p-8 text-center">
+          <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#e6e6e6] bg-[#f7f7f5] p-6 text-center">
             <TbUpload className="size-8 text-black/50" />
             <span className="body">
               {file ? file.name : "Drop a policy PDF here"}
@@ -130,7 +130,7 @@ function PolicyUpload() {
                 value={policyName}
                 onChange={(e) => setPolicyName(e.target.value)}
                 placeholder="e.g. Travel & Expense Policy v2"
-                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body placeholder:text-black/40"
+                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2 body placeholder:text-black/40"
               />
             </label>
             <label className="flex flex-col gap-2">
@@ -139,22 +139,24 @@ function PolicyUpload() {
                 type="date"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
-                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body"
+                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2 body"
               />
             </label>
             <label className="flex flex-col gap-2">
-              <span className="body-sm font-[480]">Effective to (optional)</span>
+              <span className="body-sm font-[480]">
+                Effective to (optional)
+              </span>
               <input
                 type="date"
                 value={effectiveToDate}
                 onChange={(e) => setEffectiveToDate(e.target.value)}
-                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-3 body"
+                className="rounded-lg border border-[#e6e6e6] bg-white px-3.5 py-2 body"
               />
             </label>
             <button
               type="submit"
               disabled={status === "processing"}
-              className="mt-auto rounded-[50px] bg-black px-6 py-3 text-[20px] font-[480] text-white disabled:opacity-50"
+              className="rounded-[50px] bg-black px-6 py-2 text-[20px] font-[480] text-white disabled:opacity-50"
             >
               {status === "processing" ? "Processing…" : "Upload & parse"}
             </button>
@@ -162,7 +164,7 @@ function PolicyUpload() {
         </form>
 
         {embedProgress !== null && embedProgress < 100 && (
-          <div className="mt-8">
+          <div className="mt-6">
             <div className="flex items-center justify-between body-sm text-black/60">
               <span>Embedding clauses for search…</span>
               <span>{embedProgress}%</span>
@@ -177,7 +179,7 @@ function PolicyUpload() {
         )}
 
         {status === "parsed" && (
-          <div className="mt-8 flex items-center gap-2 text-green-700">
+          <div className="mt-6 flex items-center gap-2 text-green-700">
             <TbCheck className="size-6" />
             <span className="body">
               Parsed {clauses.length} clauses successfully.
@@ -185,14 +187,14 @@ function PolicyUpload() {
           </div>
         )}
         {status === "failed" && (
-          <div className="mt-8 flex items-center gap-2 text-[#ff3d8b]">
+          <div className="mt-6 flex items-center gap-2 text-[#ff3d8b]">
             <TbX className="size-6" />
             <span className="body">{error}</span>
           </div>
         )}
 
         {clauses.length > 0 && (
-          <div className="mt-10">
+          <div className="mt-8">
             <h2 className="headline">Clause preview</h2>
             <div className="mt-6 max-h-120 space-y-4 overflow-y-auto pr-2">
               {clauses.map((c, i) => (
@@ -216,7 +218,7 @@ function PolicyUpload() {
           </div>
         )}
       </div>
-    </main>
+    </section>
   );
 }
 

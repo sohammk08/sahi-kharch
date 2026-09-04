@@ -1,22 +1,13 @@
-import {
-  fmtDate,
-  chipCls,
-  selectorCls,
-  receiptLabel,
-  chipActiveCls,
-} from "./shared.js";
+import { fmtDate, chipCls, selectorCls, chipActiveCls } from "./shared.js";
 import { LANGUAGES } from "../../lib/languages.js";
 
 function SidePanel({
   lang,
   setLang,
   loading,
-  receipts,
   policies,
   policyId,
-  receiptId,
   setPolicyId,
-  setReceiptId,
 }) {
   return (
     <aside className="flex w-full shrink-0 flex-col gap-5 md:w-72">
@@ -58,22 +49,6 @@ function SidePanel({
           ))}
         </div>
       </div>
-
-      <label className="flex flex-col gap-2">
-        <span className="body-sm font-[480]">Receipt</span>
-        <select
-          value={receiptId}
-          onChange={(e) => setReceiptId(e.target.value)}
-          className={selectorCls}
-        >
-          <option value="">{loading ? "Loading…" : "Select receipt"}</option>
-          {receipts.map((r) => (
-            <option key={r.id} value={r.id}>
-              {receiptLabel(r)}
-            </option>
-          ))}
-        </select>
-      </label>
 
       <label className="flex flex-col gap-2">
         <span className="body-sm font-[480]">Policy</span>

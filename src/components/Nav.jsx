@@ -8,9 +8,8 @@ const adminLinks = [
   { to: "/admin/dashboard", label: "Dashboard" },
   { to: "/admin/batch-run", label: "Batch Run" },
   { to: "/admin/audit-trail", label: "Audit Trail" },
-  { to: "/admin/policy-versions", label: "Policy Versions" },
   { to: "/admin/people", label: "People" },
-  { to: "/admin/policy-upload", label: "Policy Upload" },
+  { to: "/admin/policy", label: "Policy" },
   { to: "/dev/receipt-tester", label: "Receipt Tester" },
   { to: "/dev/claim-console", label: "Claim Console" },
   { to: "/dev/consistency-check", label: "Consistency Check" },
@@ -22,7 +21,9 @@ function Nav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/dev");
-  const links = isAdmin ? adminLinks : navLinks;
+  const links = isAdmin
+    ? adminLinks
+    : navLinks.filter((l) => l.to !== "/about" || !user);
 
   const handleLogout = async () => {
     setOpen(false);
@@ -37,34 +38,26 @@ function Nav() {
           <Link to="/" className="text-lg font-semibold tracking-tight">
             Sahi Kharch
           </Link>
-          <nav className="hidden items-center gap-2 lg:flex">
-            {links.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
-              >
-                {l.label}
-              </Link>
-            ))}
-            {user && !isAdmin && (
-              <>
-                <Link
-                  to="/ask"
-                  className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
-                >
-                  Ask
-                </Link>
-                <Link
-                  to="/admin/policy-upload"
-                  className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
-                >
-                  Console
-                </Link>
-              </>
-            )}
-          </nav>
         </div>
+        <nav className="hidden items-center gap-2 lg:flex">
+          {links.map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
+            >
+              {l.label}
+            </Link>
+          ))}
+          {user && !isAdmin && (
+            <Link
+              to="/ask"
+              className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
+            >
+              Ask
+            </Link>
+          )}
+        </nav>
 
         <div className="flex items-center gap-4">
           {user ? (
@@ -136,22 +129,13 @@ function Nav() {
               </Link>
             ))}
             {user && !isAdmin && (
-              <>
-                <Link
-                  to="/ask"
-                  onClick={() => setOpen(false)}
-                  className="display-lg"
-                >
-                  Ask
-                </Link>
-                <Link
-                  to="/admin/policy-upload"
-                  onClick={() => setOpen(false)}
-                  className="display-lg"
-                >
-                  Console
-                </Link>
-              </>
+              <Link
+                to="/ask"
+                onClick={() => setOpen(false)}
+                className="display-lg"
+              >
+                Ask
+              </Link>
             )}
           </div>
           <div className="mt-auto flex flex-col gap-3">

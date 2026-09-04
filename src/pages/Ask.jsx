@@ -1,12 +1,19 @@
+import {
+  addDoc,
+  getDocs,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase.js";
 import { useAuth } from "../context/useAuth.js";
 import { friendlyError } from "../lib/errors.js";
 import { useState, useEffect, useRef } from "react";
 import SidePanel from "../components/ask/SidePanel.jsx";
-import { collection, getDocs } from "firebase/firestore";
 import ChatSection from "../components/ask/ChatSection.jsx";
 import { createClaimAndRunVerdict } from "../lib/pipeline.js";
 import { translateText, speakText, transcribeAudio } from "../lib/api.js";
+
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 // Recording limits: 1s floor so a tap doesn't yield empty audio, 30s hard cap
 // (Sarvam's STT rejects anything longer)
@@ -16,13 +23,15 @@ const nowMs = () => Date.now();
 
 function Ask() {
   const { user, profile } = useAuth();
-  const [receipts, setReceipts] = useState([]);
   const [policies, setPolicies] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
   const [lang, setLang] = useState("hi-IN");
   const [receiptId, setReceiptId] = useState("");
   const [policyId, setPolicyId] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [attachedName, setAttachedName] = useState("");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -36,14 +45,11 @@ function Ask() {
   const autoStopRef = useRef(null);
   const scrollRef = useRef(null);
 
-  // Load receipts and policies from Firestore on mount
+  // Load policies from Firestore on mount
   useEffect(() => {
-    Promise.all([
-      getDocs(collection(db, "receipts")),
-      getDocs(collection(db, "policies")),
-    ])
-      .then(([r, p]) => {
-        setReceipts(r.docs.map((d) => ({ id: d.id, ...d.data() })));
+    if (!user) return;
+    getDocs(collection(db, "policies"))
+      .then((p) => {
         setPolicies(
           p.docs
             .map((d) => ({ id: d.id, ...d.data() }))
@@ -54,7 +60,45 @@ function Ask() {
         );
       })
       .finally(() => setLoadingData(false));
-  }, []);
+  }, [user]);
+
+  // Upload a receipt: parse via backend, save to Firestore, then select it
+  const uploadReceipt = async (file) => {
+    if (!file || uploading) return;
+    setUploading(true);
+    setUploadError("");
+    setAttachedName("");
+    const form = new FormData();
+    form.append("file", file);
+
+    try {
+      const res = await fetch(`${API}/api/receipts/parse`, {
+        method: "POST",
+        body: form,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Extraction failed");
+      }
+      const { extracted, confidence } = await res.json();
+
+      const ref = await addDoc(collection(db, "receipts"), {
+        uploadedBy: user.uid,
+        uploadDate: serverTimestamp(),
+        fileName: file.name,
+        fileUrl: "",
+        extracted,
+        confidence,
+        status: "parsed",
+      });
+      setReceiptId(ref.id);
+      setAttachedName(file.name);
+    } catch (err) {
+      setUploadError(friendlyError(err));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Auto-scroll to bottom whenever there's a new message
   useEffect(() => {
@@ -129,7 +173,7 @@ function Ask() {
             return;
           }
           if (!receiptId || !policyId) {
-            setError("Select a receipt and policy first, then send.");
+            setError("Attach a receipt and select a policy first, then send.");
             setInput(transcript);
             return;
           }
@@ -180,11 +224,8 @@ function Ask() {
         <SidePanel
           lang={lang}
           setLang={setLang}
-          receipts={receipts}
           policies={policies}
-          receiptId={receiptId}
           policyId={policyId}
-          setReceiptId={setReceiptId}
           setPolicyId={setPolicyId}
           loading={loadingData}
         />
@@ -197,6 +238,10 @@ function Ask() {
           setInput={setInput}
           onPlay={play}
           onError={setError}
+          onPickFile={uploadReceipt}
+          uploading={uploading}
+          attachedName={attachedName}
+          uploadError={uploadError}
           onSend={(e) => {
             e?.preventDefault();
             sendText(input);
