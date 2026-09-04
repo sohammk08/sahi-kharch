@@ -1,15 +1,14 @@
 import { db } from "../../firebase.js";
 import { useState, useEffect } from "react";
-import { translateText } from "../../lib/api.js";
 import { useAuth } from "../../context/useAuth.js";
 import { friendlyError } from "../../lib/errors.js";
 import { collection, getDocs } from "firebase/firestore";
 import { LANGUAGES, LANG_BY_CODE } from "../../lib/languages.js";
-import { createClaimAndRunVerdict } from "../../lib/pipeline.js";
+import { prepareVerdict, judgeVerdict } from "../../lib/pipeline.js";
 import { VERDICT_STYLES, fmtDate, receiptLabel } from "../../lib/ui.js";
 
 function ConsistencyCheck() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [receipts, setReceipts] = useState([]);
   const [policies, setPolicies] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -46,49 +45,45 @@ function ConsistencyCheck() {
     setResult(null);
     setRunning(true);
     try {
-      // One canonical decision (English core); translate only the explanation
-      // per language so we can confirm the verdict + cited clause stay identical.
-      const res = await createClaimAndRunVerdict({
+      // Build the deterministic context once (rules + retrieval); retrieval is
+      // language-independent, so only the LLM judgment is re-run per language.
+      const ctx = await prepareVerdict({
         receiptId,
         policyId,
         employeeId: user.uid,
-        actorId: user.uid,
-        actorName: profile?.name ?? user.email,
       });
-      const reasoningEn = res.llmOutput.reasoning || "";
-      const cited = res.retrievedClauses.filter((c) =>
-        res.llmOutput.citedClauseIds.includes(c.clauseId),
-      );
 
-      // Translate the reasoning into all selected languages (except English)
+      // Independent LLM judgment per language; verdict + cited clauses must
+      // stay identical across languages (the Section 8 consistency metric).
       const columns = await Promise.all(
-        selLangs.map(async (code) => ({
-          code,
-          reasoning:
-            code === "en-IN"
-              ? reasoningEn
-              : await translateText(reasoningEn, code),
-        })),
+        selLangs.map(async (code) => {
+          const { llmOutput } = await judgeVerdict({
+            receiptData: ctx.receipt.extracted ?? {},
+            retrievedClauses: ctx.retrievedClauses,
+            rulesOutput: ctx.rulesOutput,
+            language: code === "en-IN" ? undefined : code,
+          });
+          return {
+            code,
+            verdict: llmOutput.verdict,
+            citedClauseIds: llmOutput.citedClauseIds,
+            reasoning: llmOutput.reasoning,
+          };
+        }),
       );
 
-      // Check if all verdicts and cited clause IDs are identical across languages
-      const verdicts = columns.map(() => res.llmOutput.verdict);
       const consistent =
-        new Set(verdicts).size === 1 &&
-        columns.every(
-          (_, i) =>
-            i === 0 ||
-            JSON.stringify(res.llmOutput.citedClauseIds) ===
-              JSON.stringify(res.llmOutput.citedClauseIds),
-        );
+        new Set(columns.map((c) => c.verdict)).size === 1 &&
+        new Set(columns.map((c) => JSON.stringify(c.citedClauseIds))).size ===
+          1;
 
-      setResult({
-        verdict: res.llmOutput.verdict,
-        citedClauseIds: res.llmOutput.citedClauseIds,
-        cited,
-        columns,
-        consistent,
-      });
+      const verdict = columns[0]?.verdict;
+      const citedClauseIds = columns[0]?.citedClauseIds ?? [];
+      const cited = ctx.retrievedClauses.filter((c) =>
+        citedClauseIds.includes(c.clauseId),
+      );
+
+      setResult({ verdict, citedClauseIds, cited, columns, consistent });
     } catch (err) {
       setError(friendlyError(err));
     } finally {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/useAuth.js";
-import { FaBars, FaXmark } from "react-icons/fa6";
 import { Link, useNavigate } from "react-router-dom";
+import { FaBars, FaXmark, FaDev } from "react-icons/fa6";
 
 const navLinks = [{ to: "/about", label: "About" }];
 const adminLinks = [
@@ -10,9 +10,9 @@ const adminLinks = [
   { to: "/admin/audit-trail", label: "Audit Trail" },
   { to: "/admin/people", label: "People" },
   { to: "/admin/policy", label: "Policy" },
-  { to: "/dev/receipt-tester", label: "Receipt Tester" },
-  { to: "/dev/claim-console", label: "Claim Console" },
-  { to: "/dev/consistency-check", label: "Consistency Check" },
+  { to: "/dev/receipt-tester", label: "Receipt Tester", dev: true },
+  { to: "/dev/claim-console", label: "Claim Console", dev: true },
+  { to: "/dev/consistency-check", label: "Consistency Check", dev: true },
 ];
 
 function Nav() {
@@ -43,9 +43,12 @@ function Nav() {
             <Link
               key={l.to}
               to={l.to}
-              className="body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
+              className="relative body-sm rounded-full px-3 py-2 hover:bg-[#f7f7f5]"
             >
               {l.label}
+              {l.dev && (
+                <FaDev className="absolute -top-1 right-0 size-3 text-[#1f3d8b]" />
+              )}
             </Link>
           ))}
           {user && !isAdmin && (
@@ -122,9 +125,12 @@ function Nav() {
                 key={l.to}
                 to={l.to}
                 onClick={() => setOpen(false)}
-                className="display-lg"
+                className="relative display-lg"
               >
                 {l.label}
+                {l.dev && (
+                  <FaDev className="absolute -top-1 right-0 size-3 text-[#1f3d8b]" />
+                )}
               </Link>
             ))}
             {user && !isAdmin && (

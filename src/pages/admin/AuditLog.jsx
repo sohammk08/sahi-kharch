@@ -1,4 +1,5 @@
 import { db } from "../../firebase.js";
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FaArrowRight, FaXmark } from "react-icons/fa6";
 import { VERDICT_STYLES, fmtTime } from "../../lib/ui.js";
@@ -151,7 +152,12 @@ function AuditLog() {
                     className="border-b border-[#f1f1f1] last:border-0"
                   >
                     <td className="px-6 py-4 body-sm font-mono text-[13px]">
-                      {e.claimId}
+                      <Link
+                        to={`/admin/claim/${e.claimId}`}
+                        className="underline hover:text-[#1f3d8b]"
+                      >
+                        {e.claimId}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 body-sm">
                       {fmtTime(e.timestamp)}

@@ -40,10 +40,6 @@ wrong at scale:
 - A light RazorpayX Payouts integration (test mode) that disburses an approved
   reimbursement, demonstrating a closed loop from receipt upload to money sent.
 
-**Out of scope for the buildathon build:** full payroll/HRMS integration,
-multi-level approval workflows, GST filing, and production user management.
-These are v2 features, not needed to prove the core idea.
-
 ## High-Level Architecture
 
 ```mermaid
@@ -241,27 +237,41 @@ compliance/audit.
 
 ## Suggested Tech Stack (What, Not Code)
 
-| Layer | Role |
-| --- | --- |
-| Orchestration backend | Coordinates ingestion, retrieval, rules, LLM judgment, risk score, response/payout. |
-| Vector store | Holds embedded policy clauses for retrieval. |
-| Structured claims database | Stores claims, extracted receipt fields, verdicts, risk scores, and the append-only audit log. |
-| LLM (reasoning core) | Clause-grounded judgment on ambiguous cases and plain-language explanations. |
-| Sarvam AI APIs | Saarika/Saaras (speech-to-text + translate), Sarvam-Translate/Mayura (text translation), Bulbul (text-to-speech), optionally Sarvam Parse for vernacular OCR. |
-| Vision/OCR | Extracts vendor, amount, date, tax from receipt images/PDFs. |
-| RazorpayX Payouts API (test mode) | Contact to Fund Account to Payout to Webhook for the closed-loop demo. |
-| Frontend | Employee-facing chat/voice interface, plus a finance/admin dashboard. |
+| Layer                             | Role                                                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Orchestration backend             | Coordinates ingestion, retrieval, rules, LLM judgment, risk score, response/payout.                                                                           |
+| Vector store                      | Holds embedded policy clauses for retrieval.                                                                                                                  |
+| Structured claims database        | Stores claims, extracted receipt fields, verdicts, risk scores, and the append-only audit log.                                                                |
+| LLM (reasoning core)              | Clause-grounded judgment on ambiguous cases and plain-language explanations.                                                                                  |
+| Sarvam AI APIs                    | Saarika/Saaras (speech-to-text + translate), Sarvam-Translate/Mayura (text translation), Bulbul (text-to-speech), optionally Sarvam Parse for vernacular OCR. |
+| Vision/OCR                        | Extracts vendor, amount, date, tax from receipt images/PDFs.                                                                                                  |
+| RazorpayX Payouts API (test mode) | Contact to Fund Account to Payout to Webhook for the closed-loop demo.                                                                                        |
+| Frontend                          | Employee-facing chat/voice interface, plus a finance/admin dashboard.                                                                                         |
 
-## The Frontend (This Repo)
+## This Repo
 
-This repository currently contains the frontend, a React + Vite app with
-Tailwind CSS. See `src/` for components and `public/` for static assets.
+A monorepo-style single repo with two parts:
+
+- **Frontend** (`src/`): a React + Vite app with Tailwind CSS. Employee-facing
+  claim/ask flow plus the finance/admin dashboard. See `src/` for components
+  and `public/` for static assets.
+- **Backend** (`backend/`): a small Express server that wraps Sarvam AI
+  (STT/TTS/translate), receipt PDF/image parsing, and the LLM + embedding calls.
+  See `backend/src/routes/` for the HTTP API and `backend/src/lib/` for the
+  service clients. The frontend calls it through `src/lib/api.js`.
 
 ## Local Development
 
 ```bash
-npm install      # or pnpm install
-npm run dev      # start the Vite dev server
-npm run build    # production build
-npm run lint     # lint with ESLint
+# Backend (Sarvam AI, receipt parsing, LLM/embedding proxies)
+cd backend
+npm install
+npm run dev        # Express server on http://localhost:4000
+
+# Frontend (in the repo root)
+npm install
+cp .env.example .env   # set Firebase + VITE_API_BASE_URL values
+npm run dev            # start the Vite dev server
+npm run build          # production build
+npm run lint           # lint with ESLint
 ```

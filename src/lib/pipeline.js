@@ -55,7 +55,7 @@ async function retrieveClauses(policyId, queryEmbedding, k = 5) {
   }));
 }
 
-function buildSystemPrompt() {
+function buildSystemPrompt(language) {
   return `You are an expense policy compliance officer. You are given an employee claim's receipt data, the relevant policy clauses (the ONLY source of truth), and the output of a deterministic rules check.
 
 Return ONLY a JSON object in exactly this shape:
@@ -67,7 +67,8 @@ Decision guidance:
 - "flagged": the claim is borderline, ambiguous, or has minor non-compliance.
 - "needs_human_review": you cannot decide from the clauses provided, or the rules check is inconclusive.
 
-Cite ONLY clause IDs that appear in the provided clause list. Never invent or cite a clause that is not in the list. "confidence" is a number 0.0 to 1.0 representing how confident you are in the verdict.`;
+Cite ONLY clause IDs that appear in the provided clause list. Never invent or cite a clause that is not in the list. "confidence" is a number 0.0 to 1.0 representing how confident you are in the verdict.
+${language ? `Write the "reasoning" field in ${language}. The "verdict" and "citedClauseIds" must reflect the same decision you would give in English.` : ""}`;
 }
 
 function buildUserPrompt({ receiptData, retrievedClauses, rulesOutput }) {
@@ -118,27 +119,25 @@ export async function embedClauses(policyId, onProgress) {
   return docs.length;
 }
 
-// Full decision pipeline: load context → rules → retrieve → LLM → score →
-// evidence bundle → update claim → audit log.
-export async function runVerdict({
-  claimId,
+// Loads the deterministic context needed to judge a claim: receipt/policy/
+// employee docs, the rules output, and retrieved clauses. Performs no writes,
+// so the ConsistencyCheck dev tool can reuse it without polluting Firestore.
+export async function prepareVerdict({
   receiptId,
   policyId,
   employeeId,
-  actorId,
-  actorName,
   onStep,
 }) {
   const step = (msg) => onStep?.(msg);
 
   step("Loading claim context…");
-  const claimSnap = await getDoc(doc(db, "claims", claimId));
-  const claim = { id: claimSnap.id, ...claimSnap.data() };
-  const receiptSnap = await getDoc(doc(db, "receipts", receiptId));
+  const [receiptSnap, policySnap, employeeSnap] = await Promise.all([
+    getDoc(doc(db, "receipts", receiptId)),
+    getDoc(doc(db, "policies", policyId)),
+    getDoc(doc(db, "users", employeeId)),
+  ]);
   const receipt = { id: receiptSnap.id, ...receiptSnap.data() };
-  const policySnap = await getDoc(doc(db, "policies", policyId));
   const policy = { id: policySnap.id, ...policySnap.data() };
-  const employeeSnap = await getDoc(doc(db, "users", employeeId));
   const employee = employeeSnap.exists()
     ? { id: employeeSnap.id, ...employeeSnap.data() }
     : { name: null };
@@ -164,11 +163,26 @@ export async function runVerdict({
   });
   const retrievedClauses = await retrieveClauses(policyId, embeddings[0]);
 
+  return { receipt, policy, employee, rulesOutput, retrievedClauses };
+}
+
+// Independent LLM judgment for a prepared claim. `language` (optional) makes
+// the model reason in that language; the verdict + cited clauses must stay the
+// same, which is exactly what the ConsistencyCheck tool compares.
+export async function judgeVerdict({
+  receiptData,
+  retrievedClauses,
+  rulesOutput,
+  language,
+  onStep,
+}) {
+  const step = (msg) => onStep?.(msg);
+
   step("Getting LLM judgment…");
 
-  const system = buildSystemPrompt();
+  const system = buildSystemPrompt(language);
   const user = buildUserPrompt({
-    receiptData: ext,
+    receiptData,
     retrievedClauses,
     rulesOutput,
   });
@@ -185,6 +199,36 @@ export async function runVerdict({
   );
   enforceRules(llmOutput, rulesOutput);
 
+  return { llmOutput, llmInput: { system, user }, content };
+}
+
+// Full decision pipeline: load context → rules → retrieve → LLM → score →
+// evidence bundle → update claim → audit log.
+export async function runVerdict({
+  claimId,
+  receiptId,
+  policyId,
+  employeeId,
+  actorId,
+  actorName,
+  onStep,
+}) {
+  const step = (msg) => onStep?.(msg);
+
+  step("Loading claim context…");
+  const claimSnap = await getDoc(doc(db, "claims", claimId));
+  const claim = { id: claimSnap.id, ...claimSnap.data() };
+
+  const { receipt, policy, employee, rulesOutput, retrievedClauses } =
+    await prepareVerdict({ receiptId, policyId, employeeId, onStep });
+
+  const { llmOutput, llmInput, content } = await judgeVerdict({
+    receiptData: receipt.extracted ?? {},
+    retrievedClauses,
+    rulesOutput,
+    onStep,
+  });
+
   step("Computing risk score…");
   const riskScore = computeRiskScore({
     rulesOutput,
@@ -195,11 +239,12 @@ export async function runVerdict({
 
   step("Saving evidence bundle…");
 
+  const ext = receipt.extracted ?? {};
   const bundleRef = await addDoc(collection(db, "evidence_bundles"), {
     claimId,
     receiptData: ext,
     retrievedClauses,
-    llmInput: { system, user },
+    llmInput,
     llmOutput: { content, parsed: llmOutput },
     reasoningTrace: llmOutput.reasoning,
     rulesEngineOutput: rulesOutput,
@@ -242,7 +287,7 @@ export async function runVerdict({
     policy,
     rulesOutput,
     retrievedClauses,
-    llmInput: { system, user },
+    llmInput,
     llmOutput,
     riskScore,
     evidenceBundleId: bundleRef.id,

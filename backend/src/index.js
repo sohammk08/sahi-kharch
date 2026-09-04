@@ -34,6 +34,29 @@ app.post("/api/stt", stt);
 // Health check
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
+// Fail fast at startup if required API keys are missing — a half-configured
+// server otherwise turns the first request into a cryptic 502.
+const REQUIRED_ENV = ["SARVAM_API_KEY", "FIREWORKS_API_KEY", "GROQ_API_KEY"];
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length) {
+  console.error(
+    `Missing required env: ${missing.join(", ")}. Copy backend/.env.example → backend/.env`,
+  );
+  process.exit(1);
+}
+
+// Unknown routes → JSON 404 instead of Express's default HTML page.
+app.use((_req, res) => res.status(404).json({ error: "Not found" }));
+
+// Global error handler: multer errors (e.g. oversized uploads) and any error
+// escaping a route become a clean JSON response instead of an HTML stack trace.
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  const status = err.name === "MulterError" ? 400 : 500;
+  console.error("unhandled error:", err.message);
+  res.status(status).json({ error: err.message });
+});
+
 const port = process.env.PORT || 4000;
 app.listen(port, () =>
   console.log(`Sahi Kharch backend on http://localhost:${port}`),

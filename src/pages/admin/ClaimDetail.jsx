@@ -8,13 +8,13 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase.js";
 import { fmtTime } from "../../lib/ui.js";
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { TbFileDescription } from "react-icons/tb";
 import { useAuth } from "../../context/useAuth.js";
 import { friendlyError } from "../../lib/errors.js";
 import RiskBars from "../../components/RiskBars.jsx";
 import { overrideClaim } from "../../lib/pipeline.js";
+import { useState, useEffect, useCallback } from "react";
 
 const FIELD_LABELS = {
   vendor: "Vendor",
@@ -42,46 +42,47 @@ function ClaimDetail() {
   const [bundle, setBundle] = useState(null);
   const [history, setHistory] = useState([]);
   const [comment, setComment] = useState("");
-  const [decision, setDecision] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const loadClaim = useCallback(async () => {
+    try {
+      const cSnap = await getDoc(doc(db, "claims", id));
+      const c = { id: cSnap.id, ...cSnap.data() };
+      setClaim(c);
+
+      const [rSnap, eSnap, bSnap, hSnap] = await Promise.all([
+        c.receiptId ? getDoc(doc(db, "receipts", c.receiptId)) : null,
+        c.employeeId ? getDoc(doc(db, "users", c.employeeId)) : null,
+        c.evidenceBundleId
+          ? getDoc(doc(db, "evidence_bundles", c.evidenceBundleId))
+          : null,
+        getDocs(query(collection(db, "audit_log"), where("claimId", "==", id))),
+      ]);
+
+      setReceipt(rSnap?.exists() ? { id: rSnap.id, ...rSnap.data() } : null);
+      setEmployee(eSnap?.exists() ? { id: eSnap.id, ...eSnap.data() } : null);
+      setBundle(bSnap?.exists() ? { id: bSnap.id, ...bSnap.data() } : null);
+      setHistory(
+        hSnap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .sort(
+            (a, b) =>
+              (a.timestamp?.toMillis?.() ?? 0) -
+              (b.timestamp?.toMillis?.() ?? 0),
+          ),
+      );
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     (async () => {
-      try {
-        const cSnap = await getDoc(doc(db, "claims", id));
-        const c = { id: cSnap.id, ...cSnap.data() };
-        setClaim(c);
-
-        const [rSnap, eSnap, bSnap, hSnap] = await Promise.all([
-          c.receiptId ? getDoc(doc(db, "receipts", c.receiptId)) : null,
-          c.employeeId ? getDoc(doc(db, "users", c.employeeId)) : null,
-          c.evidenceBundleId
-            ? getDoc(doc(db, "evidence_bundles", c.evidenceBundleId))
-            : null,
-          getDocs(
-            query(collection(db, "audit_log"), where("claimId", "==", id)),
-          ),
-        ]);
-
-        setReceipt(rSnap?.exists() ? { id: rSnap.id, ...rSnap.data() } : null);
-        setEmployee(eSnap?.exists() ? { id: eSnap.id, ...eSnap.data() } : null);
-        setBundle(bSnap?.exists() ? { id: bSnap.id, ...bSnap.data() } : null);
-        setHistory(
-          hSnap.docs
-            .map((d) => ({ id: d.id, ...d.data() }))
-            .sort(
-              (a, b) =>
-                (a.timestamp?.toMillis?.() ?? 0) -
-                (b.timestamp?.toMillis?.() ?? 0),
-            ),
-        );
-      } catch (err) {
-        setError(friendlyError(err));
-      } finally {
-        setLoading(false);
-      }
+      await loadClaim();
     })();
-  }, [id]);
+  }, [loadClaim]);
 
   const handleDecision = async (decisionValue) => {
     if (submitting || !decisionValue) return;
@@ -95,7 +96,7 @@ function ClaimDetail() {
         actorId: user.uid,
         actorName: profile?.name ?? user.email,
       });
-      setDecision(decisionValue);
+      await loadClaim();
     } catch (err) {
       setError(friendlyError(err));
     } finally {
@@ -223,7 +224,7 @@ function ClaimDetail() {
             {/* Decision */}
             <section className="rounded-3xl border border-[#e6e6e6] bg-white p-6">
               <h2 className="headline">
-                {decision ?? claim?.reviewStatus ?? "Review decision"}
+                {claim?.reviewStatus ?? "Review decision"}
               </h2>
               {claim?.reviewStatus ? (
                 <p className="mt-3 body text-black/80">
